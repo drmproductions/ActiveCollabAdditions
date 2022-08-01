@@ -10,7 +10,6 @@
 			script.remove()
 			script = undefined
 		}
-		console.log('reload?')
 		script = document.createElement('script')
 		script.setAttribute('type', 'module')
 		script.src = chrome.runtime.getURL('src/index.js')

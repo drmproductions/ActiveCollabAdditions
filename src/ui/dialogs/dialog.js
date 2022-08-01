@@ -112,7 +112,6 @@ export function hide(id) {
 
 export function show(id, dialog) {
 	if (document.querySelector(`.acit-${id}-dialog`)) return
-	console.log(dialog)
 	const overlay = DialogOverlay(id, dialog)
 	document.body.appendChild(overlay)
 }
