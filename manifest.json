@@ -29,6 +29,7 @@
 				"src/bus.js",
 				"src/cache.js",
 				"src/db.js",
+				"src/utils.js",
 				"src/ui/el.js",
 				"src/ui/timer.js",
 				"src/ui/dialogs/dialog.js",
