@@ -9,7 +9,10 @@ export function hide() {
 
 export async function show() {
 	const timersDefaultJobTypeEl = El('select', {
-		style: { width: 'fit-content' },
+		style: {
+			paddingTop: '6px !important',
+			width: 'fit-content',
+		},
 		value: await db.getSetting('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
 		async onChange() {
 			await db.setSetting('timersDefaultJobType', this.value)
@@ -19,7 +22,10 @@ export async function show() {
 	}))
 
 	const timersMinimumEntryEl = El('select', {
-		style: { width: 'fit-content' },
+		style: {
+			paddingTop: '6px !important',
+			width: 'fit-content',
+		},
 		value: await db.getSetting('timersMinimumEntry') ?? 0,
 		async onChange() {
 			await db.setSetting('timersMinimumEntry', this.value)
@@ -33,7 +39,10 @@ export async function show() {
 	])
 
 	const timersRoundingIntervalEl = El('select', {
-		style: { width: 'fit-content' },
+		style: {
+			paddingTop: '6px !important',
+			width: 'fit-content',
+		},
 		value: await db.getSetting('timersRoundingInterval') ?? 0,
 		async onChange() {
 			await db.setSetting('timersRoundingInterval', this.value)

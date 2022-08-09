@@ -32,7 +32,11 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	const timeEl = El('input', {
 		style: {
-			width: (formatDuration(0).length === 5 ? 56 : 74) + 'px !important',
+			boxSizing: 'border-box',
+			height: '32px !important',
+			paddingTop: '8px !important',
+			paddingRight: '8px !important',
+			width: (formatDuration(0).length === 5 ? 52 : 71) + 'px !important',
 		},
 		type: 'text',
 		value: formatDuration(0),
@@ -123,7 +127,10 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		},
 	}, 'Follow Task')
 	const jobTypeEl = El('select', {
-		style: { width: 'fit-content' },
+		style: {
+			paddingTop: '6px !important',
+			width: 'fit-content'
+		},
 		value: await db.getSetting('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
 		async onChange() {
 			await createOrUpdateTimer(projectId, taskId, {
