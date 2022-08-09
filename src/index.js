@@ -1,12 +1,23 @@
 import * as SettingsDialog from './ui/dialogs/settings.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
+import * as api from './api.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
-import { El } from './ui/el.js'
+import { El, getEl } from './ui/el.js'
 import { Timer } from './ui/timer.js'
+import { useCache } from './cache.js'
+import { useStyle } from './ui/style.js'
 
 const unloadFuncs = []
+
+const showTimerWhenHoveringOverTaskClassName = useStyle({
+	':hover': {
+		' .acit-timer-menu-button': {
+			opacity: 1,
+		},
+	},
+})
 
 function createMissingTimerElements() {
 	function variant1() {
@@ -20,15 +31,18 @@ function createMissingTimerElements() {
 			const matches = new URL(href).pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)
 			if (!matches) continue
 
-			const project = parseInt(matches[2])
-			const task = parseInt(matches[5])
+			const projectId = parseInt(matches[2])
+			const taskId = parseInt(matches[5])
 
-			if (isNaN(project) || isNaN(task)) continue
+			if (isNaN(projectId) || isNaN(taskId)) continue
 
-			cache.set(`task-name-${project}-${task}`, taskNameEl.innerText)
+			cache.set(`task-name-${projectId}-${taskId}`, taskNameEl.innerText)
+
+			// sometimes this disappears, so it's probably best if we always add it
+			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
 
 			if (!taskEl.querySelector('.acit-timer')) {
-				taskEl.prepend(Timer({ project, task }))
+				taskEl.prepend(Timer({ timerContext: { projectId, taskId } }))
 			}
 		}
 	}
@@ -103,26 +117,47 @@ onUnload(async () => {
 
 	const iconStyle = {
 		alignItems: 'center',
-		display: 'flex',
+		display: 'flex !important',
 		justifyContent: 'center',
 	}
 
-	const timerElData = {}
-	const timerEl = Timer(timerElData)
-	timerEl.firstChild.style.marginRight = ''
-	timerEl.firstChild.style.marginLeft = '16px'
-	timerEl.firstChild.style.top = '8px'
-	timerEl.firstChild.style.pointerEvents = 'all'
+	const timerContext = {}
+	const timerEl = Timer({ menuButtonOptions: { alwaysVisible: true }, timerContext })
+	{
+		const el = getEl(timerEl)
+		el.style.marginRight = ''
+		el.style.marginLeft = '16px'
+		el.style.top = '8px'
+		el.style.pointerEvents = 'all'
+	}
 
 	async function update() {
 		const timers = await db.getTimers()
-		const timer = timers.filter(timer => timer.running)[0]
-		const project = timer?.project
-		const task = timer?.task
-		if (timerElData.project !== project || timerElData.task !== task) {
-			timerElData.project = project
-			timerElData.task = task
-			timerElData?.onChanged()
+		timers.sort((a, b) => b.started_at - a.started_at)
+
+		const timer = timers.find(timer => timer.running) || timers[0]
+
+		const projectId = timer?.projectId
+		const taskId = timer?.taskId
+
+		if (timerContext.projectId !== projectId || timerContext.taskId !== taskId) {
+			timerContext.projectId = projectId
+			timerContext.taskId = taskId
+			timerContext?.onChanged()
+
+			if (timer) {
+				const projectName = await useCache(`project-name-${projectId}`, async () => {
+					const res = await api.fetchProject(projectId)
+					return res.single.name
+				})
+
+				const taskName = await useCache(`task-name-${projectId}-${taskId}`, async () => {
+					const res = await api.fetchTask(timer.projectId, timer.taskId)
+					return res.single.name
+				})
+
+				getEl(timerEl).title = `${projectName} - ${taskName}`
+			}
 		}
 	}
 
@@ -151,7 +186,7 @@ onUnload(async () => {
 	const timerWrapperEl = El('li.topbar_item', {
 		style: {
 			margin: 0,
-			width: 'fit-content',
+			width: 'fit-content !important',
 		},
 	}, [timerEl])
 

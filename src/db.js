@@ -8,11 +8,11 @@ export function close() {
 }
 
 export function createTimer(timer) {
-	const { project, task } = timer
+	const { projectId, taskId } = timer
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction('timers', 'readwrite')
 		transaction.oncomplete = () => {
-			bus.emit('timer-created', { data: { project, task } })
+			bus.emit('timer-created', { data: { projectId, taskId } })
 			resolve()
 		}
 		transaction.onerror = reject
@@ -22,17 +22,17 @@ export function createTimer(timer) {
 	})
 }
 
-export function deleteTimer(project, task) {
+export function deleteTimer(projectId, taskId) {
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction('timers', 'readwrite')
 		transaction.oncomplete = () => {
-			bus.emit('timer-deleted', { data: { project, task } })
+			bus.emit('timer-deleted', { data: { projectId, taskId } })
 			resolve()
 		}
 		transaction.onerror = reject
 
 		const objectStore = transaction.objectStore('timers')
-		objectStore.delete([project, task])
+		objectStore.delete([projectId, taskId])
 	})
 }
 
@@ -50,7 +50,22 @@ export function deleteTimers() {
 	})
 }
 
-export function getTimer(project, task) {
+export function getSetting(key) {
+	return new Promise((resolve, reject) => {
+		let result
+
+		const transaction = db.transaction('settings', 'readonly')
+		transaction.oncomplete = () => resolve(result?.value)
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('settings')
+		objectStore.get(key).onsuccess = (event) => {
+			result = event.target.result
+		}
+	})
+}
+
+export function getTimer(projectId, taskId) {
 	return new Promise((resolve, reject) => {
 		let result
 
@@ -59,7 +74,7 @@ export function getTimer(project, task) {
 		transaction.onerror = reject
 
 		const objectStore = transaction.objectStore('timers')
-		objectStore.get([project, task]).onsuccess = (event) => {
+		objectStore.get([projectId, taskId]).onsuccess = (event) => {
 			result = event.target.result
 		}
 	})
@@ -82,12 +97,20 @@ export function getTimers() {
 
 export function open() {
 	return new Promise((resolve, reject) => {
-		const request = window.indexedDB.open('active-collab-inline-timers', 1)
+		const request = window.indexedDB.open('active-collab-inline-timers', 2)
 		request.onerror = (event) => {
 			reject(event)
 		}
-		request.onupgradeneeded = ({ target: { result } }) => {
-			result.createObjectStore('timers', { keyPath: ['project', 'task'] })
+		request.onupgradeneeded = ({ oldVersion, newVersion, target: { result } }) => {
+			const check = (version) => version > oldVersion && version <= newVersion
+
+			if (check(1)) {
+				result.createObjectStore('timers', { keyPath: ['projectId', 'taskId'] })
+			}
+
+			if (check(2)) {
+				result.createObjectStore('settings', { keyPath: 'key' })
+			}
 		}
 		request.onsuccess = ({ target: { result } }) => {
 			db = result
@@ -97,16 +120,30 @@ export function open() {
 }
 
 export function updateTimer(timer) {
-	const { project, task } = timer
+	const { projectId, taskId } = timer
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction('timers', 'readwrite')
 		transaction.oncomplete = () => {
-			bus.emit('timer-updated', { data: { project, task } })
+			bus.emit('timer-updated', { data: { projectId, taskId } })
 			resolve()
 		}
 		transaction.onerror = reject
 
 		const objectStore = transaction.objectStore('timers')
 		objectStore.put(timer)
+	})
+}
+
+export function setSetting(key, value) {
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction('settings', 'readwrite')
+		transaction.oncomplete = () => {
+			bus.emit('setting-updated', { data: { key } })
+			resolve()
+		}
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('settings')
+		objectStore.put({ key, value })
 	})
 }
