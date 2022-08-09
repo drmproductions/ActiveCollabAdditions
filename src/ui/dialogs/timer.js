@@ -51,6 +51,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 			if (e.key === 'ArrowLeft') return
 			if (e.key === 'ArrowRight') return
+			if (e.key === 'Tab') return
 
 			e.preventDefault()
 
