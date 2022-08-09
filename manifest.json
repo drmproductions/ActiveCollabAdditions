@@ -36,6 +36,7 @@
 				"src/ui/timer.js",
 				"src/ui/dialogs/dialog.js",
 				"src/ui/dialogs/settings.js",
+				"src/ui/dialogs/timer.js",
 				"src/ui/dialogs/timers.js",
 				"src/index.js"
 			],
