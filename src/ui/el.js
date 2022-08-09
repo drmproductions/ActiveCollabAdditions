@@ -1,3 +1,5 @@
+import { formatNumberToPixels, useStyle } from './style.js'
+
 class ElWrapper extends HTMLElement {
 	static initialized = false
 
@@ -27,22 +29,53 @@ class ElWrapper extends HTMLElement {
 	}
 }
 
-export function El(selector, options, children) {
-	if (options && typeof options === 'string' || Array.isArray(options)) {
-		children = options
-		options = undefined
+function createElement(selector, options, children) {
+	if (options) {
+		if (options instanceof Element || typeof options === 'string' || Array.isArray(options)) {
+			children = options
+			options = undefined
+		}
 	}
 
 	const [tag, ...classNames] = selector.split('.')
 
-	const el = document.createElement(tag)
+	let el
+	if (tag === 'svg' || tag === 'path') {
+		el = document.createElementNS('http://www.w3.org/2000/svg', tag)
+	}
+	else {
+		el = document.createElement(tag)
+	}
 
-	ElWrapper.initialize()
-	const wrapper = new ElWrapper(el)
+	const isSVG = el instanceof SVGElement
 
 	if (classNames) {
 		for (const className of classNames)
 			el.classList.add(className)
+	}
+
+	let topEl = el
+	if (options?.onConnected || options?.onDisconnected) {
+		if (isSVG) {
+			throw new Error(`onConnected and onDisconnected is not supported on SVGElements right now.`)
+		}
+		ElWrapper.initialize()
+		topEl = new ElWrapper(el)
+	}
+
+	if (children) {
+		if (children instanceof Element) {
+			el.appendChild(children)
+		}
+		else if (typeof children === 'string') {
+			el.innerText = children
+		}
+		else if (Array.isArray(children)) {
+			for (const child of children) {
+				if (!child) continue
+				el.appendChild(child)
+			}
+		}
 	}
 
 	if (options) {
@@ -52,25 +85,46 @@ export function El(selector, options, children) {
 			switch (k1) {
 				case 'onconnected':
 				case 'ondisconnected':
-					wrapper[k1] = v1
+					topEl[k1] = v1
 					break
+				case 'dataset':
+					for (let [k2, v2] of Object.entries(v1)) {
+						el.dataset[k2] = v2
+					}
 				case 'style':
-					for (const [k2, v2] of Object.entries(v1))
-						el.style[k2] = v2
+					const normalStyles = v1.$
+					if (normalStyles) {
+						delete v1.$
+						for (let [k2, v2] of Object.entries(normalStyles)) {
+							el.style[k2] = formatNumberToPixels(k2, v2)
+						}
+					}
+					el.classList.add(useStyle(v1))
+					if (normalStyles) {
+						v1.$ = normalStyles
+					}
 					break
 				default:
-					el[k1] = v1
+					if (isSVG) {
+						el.setAttribute(k1, v1)
+					}
+					else {
+						el[k1] = v1
+					}
 			}
 		}
 	}
 
-	if (typeof children === 'string') {
-		el.innerText = children
-	}
-	else if (Array.isArray(children)) {
-		for (const child of children)
-			el.appendChild(child)
-	}
+	return topEl ?? el
+}
 
-	return wrapper
+export function getEl(el) {
+	if (el instanceof ElWrapper) {
+		return el.firstChild
+	}
+	return el
+}
+
+export function El(selector, options, children) {
+	return createElement(selector, options, children)
 }
