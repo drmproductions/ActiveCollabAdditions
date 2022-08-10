@@ -1,3 +1,4 @@
+import * as ConfirmPopup from '../popups/confirm.js'
 import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
@@ -252,6 +253,11 @@ export async function show({ projectId, taskId, dialogOptions }) {
 	let unsub
 
 	async function onClickDelete() {
+		const yes = await ConfirmPopup.show({
+			message: 'Delete Timer?',
+			target: deleteButtonEl.firstChild,
+		})
+		if (!yes) return
 		await db.deleteTimer(projectId, taskId)
 		hide()
 	}

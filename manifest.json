@@ -40,6 +40,8 @@
 				"src/ui/dialogs/preferences.js",
 				"src/ui/dialogs/timer.js",
 				"src/ui/dialogs/timers.js",
+				"src/ui/popups/popup.js",
+				"src/ui/popups/confirm.js",
 				"src/index.js"
 			],
 			"matches": ["*://*/*"]

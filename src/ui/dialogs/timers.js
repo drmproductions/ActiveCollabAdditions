@@ -1,3 +1,4 @@
+import * as ConfirmPopup from '../popups/confirm.js'
 import * as PreferencesDialog from './preferences.js'
 import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
@@ -148,10 +149,20 @@ export function show() {
 	}
 
 	async function onClickDelete() {
+		const yes = await ConfirmPopup.show({
+			message: 'Delete All Timers?',
+			target: deleteAllButtonEl.firstChild,
+		})
+		if (!yes) return
 		await db.deleteTimers()
 	}
 
 	async function onClickSubmit() {
+		const yes = await ConfirmPopup.show({
+			message: 'Submit All Timers?',
+			target: submitAllButtonEl.firstChild,
+		})
+		if (!yes) return
 		const items = []
 		for (const timer of await db.getTimers()) {
 			const { projectId, taskId } = timer
