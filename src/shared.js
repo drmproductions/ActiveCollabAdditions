@@ -76,7 +76,7 @@ export async function submitTimer({ projectId, taskId }) {
 		timer.submittingState = 'submitting'
 		await db.updateTimer(timer)
 
-		const duration = roundDuration(getTimerDuration(timer))
+		const duration = await roundDuration(getTimerDuration(timer))
 
 		await api.postTimeRecord({
 			billable_status: billableStatus,
