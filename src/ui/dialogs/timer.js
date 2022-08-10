@@ -79,7 +79,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			height: '32px !important',
 			paddingTop: '8px !important',
 			paddingRight: '8px !important',
-			width: (shared.formatDuration(0).length === 5 ? 52 : 71) + 'px !important',
+			width: (shared.formatDuration(0).length === 5 ? 53 : 72) + 'px !important',
 		},
 		type: 'text',
 		value: shared.formatDuration(0),
