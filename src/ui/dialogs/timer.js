@@ -95,16 +95,10 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		value: shared.formatDuration(0),
 		async onChange() {
 			try {
-				const duration = shared.parseTime(this.value)
-				if (duration === 0) {
-					await db.deleteTimer(projectId, taskId)
-				}
-				else {
-					await createOrUpdateTimer(projectId, taskId, {
-						duration,
-						started_at: Date.now(),
-					})
-				}
+				await createOrUpdateTimer(projectId, taskId, {
+					duration: shared.parseTime(this.value),
+					started_at: Date.now(),
+				})
 			}
 			catch (e) {
 				const timer = await db.getTimer(projectId, taskId)
