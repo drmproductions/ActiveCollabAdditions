@@ -44,6 +44,19 @@ export function parseTime(time) {
 	return duration * 1000
 }
 
+export async function roundDuration(duration) {
+	const timersMinimumEntry = (await db.getPreference('timersMinimumEntry') ?? 0) * 60 * 1000
+	const timersRoundingInterval = (await db.getPreference('timersRoundingInterval') ?? 0) * 60 * 1000
+
+	duration = Math.max(duration, timersMinimumEntry)
+
+	if (timersRoundingInterval > 0) {
+		duration = Math.ceil(duration / timersRoundingInterval) * timersRoundingInterval
+	}
+
+	return duration
+}
+
 export async function submitTimer({ projectId, taskId }) {
 	const timer = await db.getTimer(projectId, taskId)
 
@@ -61,6 +74,9 @@ export async function submitTimer({ projectId, taskId }) {
 	try {
 		timer.submittingState = 'submitting'
 		await db.updateTimer(timer)
+
+		const duration = roundDuration(getTimerDuration(timer))
+
 		await api.postTimeRecord({
 			billable_status: billableStatus,
 			job_type_id: jobTypeId,
@@ -69,8 +85,9 @@ export async function submitTimer({ projectId, taskId }) {
 			summary: timer.description ?? '',
 			task_id: taskId,
 			user_id: angie.user_session_data.logged_user_id,
-			value: formatDuration(getTimerDuration(timer), undefined, false),
+			value: formatDuration(duration, undefined, false),
 		})
+
 		await db.deleteTimer(projectId, taskId)
 	}
 	catch (e) {

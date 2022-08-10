@@ -28,13 +28,13 @@ export async function show() {
 		},
 		value: await db.getPreference('timersMinimumEntry') ?? 0,
 		async onChange() {
-			await db.setPreference('timersMinimumEntry', this.value)
+			await db.setPreference('timersMinimumEntry', parseInt(this.value))
 		},
 	}, [
 		El('option', { value: 0 }, 'No Minimum'),
 		El('option', { value: 15 }, '15 Minutes'),
 		El('option', { value: 30 }, '30 Minutes'),
-		El('option', { value: 15 }, '45 Minutes'),
+		El('option', { value: 45 }, '45 Minutes'),
 		El('option', { value: 60 }, '60 Minutes'),
 	])
 
@@ -45,7 +45,7 @@ export async function show() {
 		},
 		value: await db.getPreference('timersRoundingInterval') ?? 0,
 		async onChange() {
-			await db.setPreference('timersRoundingInterval', this.value)
+			await db.setPreference('timersRoundingInterval', parseInt(this.value))
 		},
 	}, [
 		El('option', { value: 0 }, 'Don\'t Round'),
