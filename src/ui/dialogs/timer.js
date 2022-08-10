@@ -268,6 +268,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	async function onClickSubmit() {
 		await shared.submitTimer({ projectId, taskId })
+		hide()
 	}
 
 	async function update(stillUpdateTimeIfRunning) {
