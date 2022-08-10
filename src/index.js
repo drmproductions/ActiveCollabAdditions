@@ -110,7 +110,8 @@ onUnload(async () => {
 	// TODO only do this in development mode
 	function onContextMenu(e) {
 		e.preventDefault()
-		bus.emit('hot-reload')
+		// TODO not supported with new ESM structure
+		// bus.emit('hot-reload')
 	}
 
 	const iconStyle = {
