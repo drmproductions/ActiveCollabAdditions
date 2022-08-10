@@ -1,11 +1,51 @@
-import * as api from '../../api.js'
 import * as bus from '../../bus.js'
+import * as cache from '../../cache.js'
 import * as db from '../../db.js'
 import * as dialog from './dialog.js'
+import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
-import { formatDuration, getTimerDuration, parseTime } from '../timer.js'
-import { useCache } from '../../cache.js'
+
+class TimeInputHistoryStack {
+	constructor(inputEl) {
+		this._backwardsStack = []
+		this._forwardsStack = []
+		this._inputEl = inputEl
+	}
+
+	_get() {
+		return {
+			selectionIndex: this._inputEl.selectionStart,
+			value: this._inputEl.value,
+		}
+	}
+
+	_set({ selectionIndex, value }) {
+		this._inputEl.value = value
+		this._inputEl.selectionStart = this._inputEl.selectionEnd = selectionIndex
+		this._inputEl.dispatchEvent(new Event('change'))
+		// console.log(this._backwardsStack.map(i => i.value), value, this._forwardsStack.map(i => i.value).reverse())
+	}
+
+	popBackwards() {
+		if (this._backwardsStack.length === 0) return
+		this._forwardsStack.push(this._get())
+		this._set(this._backwardsStack.pop())
+	}
+
+	popForwards() {
+		if (this._forwardsStack.length === 0) return
+		this._backwardsStack.push(this._get())
+		this._set(this._forwardsStack.pop())
+	}
+
+	push(value, selectionIndex) {
+		this._forwardsStack.length = 0
+		this._backwardsStack.push(this._get())
+		this._set({ selectionIndex, value })
+	}
+}
+
 
 async function createOrUpdateTimer(projectId, taskId, updates) {
 	const timer = await db.getTimer(projectId, taskId)
@@ -30,25 +70,51 @@ export function hide() {
 export async function show({ projectId, taskId, dialogOptions }) {
 	const overlayOptions = dialogOptions?.overlayOptions
 
+	let timeElUndoRedoStateMachine
+
 	const timeEl = El('input', {
 		style: {
 			boxSizing: 'border-box',
 			height: '32px !important',
 			paddingTop: '8px !important',
 			paddingRight: '8px !important',
-			width: (formatDuration(0).length === 5 ? 52 : 71) + 'px !important',
+			width: (shared.formatDuration(0).length === 5 ? 52 : 71) + 'px !important',
 		},
 		type: 'text',
-		value: formatDuration(0),
+		value: shared.formatDuration(0),
 		async onChange() {
-			await createOrUpdateTimer(projectId, taskId, {
-				duration: parseTime(this.value),
-				started_at: Date.now(),
-			})
+			try {
+				await createOrUpdateTimer(projectId, taskId, {
+					duration: shared.parseTime(this.value),
+					started_at: Date.now(),
+				})
+			}
+			catch (e) {
+				const timer = await db.getTimer(projectId, taskId)
+				this.value = shared.formatDuration(timer ? shared.getTimerDuration(timer) : 0)
+			}
 		},
-		onKeyDown(e) {
-			// TODO allow ctrl-a, ctrl-c, ctrl-v, etc
-
+		async onKeyDown(e) {
+			if (e.ctrlKey) {
+				if (e.key === 'c') {
+					navigator.clipboard.writeText(this.value)
+					return
+				}
+				if (e.key === 'v') {
+					this.selectionStart = 0
+					this.selectionEnd = this.value.length
+					setTimeout(() => this.dispatchEvent(new Event('change')), 10)
+					return
+				}
+				if (e.key === 'z') {
+					timeElUndoRedoStateMachine.popBackwards()
+					return
+				}
+				if (e.key === 'Z') {
+					timeElUndoRedoStateMachine.popForwards()
+					return
+				}
+			}
 			if (e.key === 'ArrowLeft') return
 			if (e.key === 'ArrowRight') return
 			if (e.key === 'Tab') return
@@ -57,38 +123,40 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 			if (e.key === 'Backspace') {
 				let start = this.selectionStart
-				const { value } = this
+				let { value } = this
 				if (value[start - 1] === ':') start--
 				if (start <= 0) return
-				this.value = value.slice(0, start - 1) + '0' + value.slice(start)
-				this.selectionStart = start - 1
-				this.selectionEnd = start - 1
-				this.dispatchEvent(new Event('change'))
+				value = value.slice(0, start - 1) + '0' + value.slice(start)
+				timeElUndoRedoStateMachine.push(value, start - 1)
 				return
 			}
 
 			let digit = parseInt(e.key)
-			if (isNaN(digit)) return
+			if (isNaN(digit)) {
+				return
+			}
 
 			let start = this.selectionStart
-			if (start === this.value.length) start--
+			if (start === this.value.length) {
+				start--
+			}
 
-			const { value } = this
-			if (value[start] === ':') start++
+			let { value } = this
+			if (value[start] === ':') {
+				start++
+			}
 
 			if (value[start - 1] === ':') {
 				digit = Math.min(5, digit)
 			}
 
-			this.value = value.slice(0, start) + digit + value.slice(start + 1)
-
-			let delta = 1
-			if (this.value[start + 1] === ':') delta++
-			this.selectionStart = start + delta
-			this.selectionEnd = start + delta
-			this.dispatchEvent(new Event('change'))
+			value = value.slice(0, start) + digit + value.slice(start + 1)
+			start = start + 1 + (value[start + 1] === ':' ? 1 : 0)
+			timeElUndoRedoStateMachine.push(value, start)
 		},
 	})
+	timeElUndoRedoStateMachine = new TimeInputHistoryStack(timeEl)
+
 	const descriptionEl = El('textarea', {
 		style: { padding: 8, resize: 'vertical', transition: 'none', width: '100%' },
 		async onChange() {
@@ -97,6 +165,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			})
 		},
 	})
+
 	const isBillableEl = El('input', {
 		checked: false,
 		disabled: true,
@@ -107,6 +176,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			})
 		},
 	})
+
 	const followTaskIsBillableEl = El('a', {
 		href: '#',
 		style: {
@@ -120,13 +190,12 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			delete timer.isBillable
 			await db.updateTimer(timer)
 			isBillableEl.disabled = true
-			isBillableEl.checked = await useCache(`task-is-billable-${projectId}-${taskId}`, async () => {
-				const res = await api.fetchTask(projectId, taskId)
-				return res.single.is_billable
-			})
+			const res = await cache.getTask({ projectId, taskId })
+			isBillableEl.checked = res.single.is_billable
 			isBillableEl.disabled = false
 		},
 	}, 'Follow Task')
+
 	const jobTypeEl = El('select', {
 		style: {
 			paddingTop: '6px !important',
@@ -135,7 +204,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		value: await db.getSetting('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
 		async onChange() {
 			await createOrUpdateTimer(projectId, taskId, {
-				jobType: this.value,
+				jobTypeId: parseInt(this.value),
 			})
 		},
 	}, angie.collections.job_types.map(({ id, name }) => {
@@ -170,7 +239,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		await db.deleteTimer(projectId, taskId)
 	}
 
-	function onClickSubmit() {
+	async function onClickSubmit() {
+		await shared.submitTimer({ projectId, taskId })
 	}
 
 	async function update(stillUpdateTimeIfRunning) {
@@ -178,7 +248,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		if (!timer) return
 
 		if (!timer.running || stillUpdateTimeIfRunning) {
-			timeEl.value = formatDuration(getTimerDuration(timer))
+			timeEl.value = shared.formatDuration(shared.getTimerDuration(timer))
 		}
 
 		if (typeof timer.description === 'string') {
@@ -193,8 +263,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			followTaskIsBillableEl.style.display = 'none'
 		}
 
-		if (typeof timer.jobType === 'string') {
-			jobTypeEl.value = timer.jobType
+		if (typeof timer.jobTypeId === 'number') {
+			jobTypeEl.value = timer.jobTypeId
 		}
 
 		return timer
@@ -229,10 +299,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		descriptionEl.focus()
 
 		if (typeof timer.isBillable !== 'boolean') {
-			isBillableEl.checked = await useCache(`task-is-billable-${projectId}-${taskId}`, async () => {
-				const res = await api.fetchTask(projectId, taskId)
-				return res.single.is_billable
-			})
+			const res = await cache.getTask({ projectId, taskId })
+			isBillableEl.checked = res.single.is_billable
 		}
 		isBillableEl.disabled = false
 	}
@@ -241,10 +309,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		unsub()
 	}
 
-	const name = await useCache(`task-name-${projectId}-${taskId}`, async () => {
-		const res = await api.fetchTask(timer.projectId, timer.taskId)
-		return res.single.name
-	})
+	const name = await cache.getTaskName({ projectId, taskId })
 
 	const dialogEl = Dialog({ onConnected, onDisconnected, width: 550, ...dialogOptions }, [
 		DialogHeader(name, [

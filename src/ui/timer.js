@@ -1,48 +1,19 @@
 import * as TimerDialog from './dialogs/timer.js'
 import * as bus from '../bus.js'
 import * as db from '../db.js'
+import * as shared from '../shared.js'
 import { El } from './el.js'
-
-export function formatDuration(duration, separator = ':') {
-	const d = new Date(duration)
-	const parts = [
-		d.getUTCHours().toString().padStart(2, '0'),
-		d.getUTCMinutes().toString().padStart(2, '0'),
-	]
-	if (TIMERS_WITH_SECONDS)
-		parts.push(d.getUTCSeconds().toString().padStart(2, '0'))
-	return parts.join(separator)
-}
-
-export function getTimerDuration(timer) {
-	if (!timer) return 0
-	return timer.duration + (timer.running ? (Date.now() - timer.started_at) : 0)
-}
-
-// returns time in milliseconds
-export function parseTime(time) {
-	const parts = time.split(':')
-	let pow = 2 // hours
-	let duration = 0
-	for (let part of parts) {
-		part = parseInt(part)
-		if (isNaN(part)) throw new Error('Invalid time format.')
-		duration += part * Math.max(1, 60 ** pow)
-		pow--
-	}
-	return duration * 1000
-}
 import { TIMERS_WITH_SECONDS } from '../env.js'
 
 export function TimerMenuButton(options) {
-	const { timerContext } = options
+	const { updatableContext } = options
 
 	const style = {
 		cursor: 'pointer',
 		float: 'left',
 		height: 24,
 		opacity: options.alwaysVisible ? 1 : 0,
-		transition: 'ease .3s opacity',
+		// transition: 'ease .3s opacity',
 		width: 24,
 		':hover': {
 			backgroundColor: 'var(--color-theme-300)',
@@ -54,7 +25,7 @@ export function TimerMenuButton(options) {
 	}
 
 	async function onClick(e) {
-		const timer = await db.getTimer(timerContext.projectId, timerContext.taskId)
+		const timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
 		if (timer && timer.running) {
 			timer.duration += Date.now() - timer.started_at
 			timer.started_at = Date.now()
@@ -62,8 +33,8 @@ export function TimerMenuButton(options) {
 			await db.updateTimer(timer)
 		}
 		TimerDialog.show({
-			projectId: timerContext.projectId,
-			taskId: timerContext.taskId,
+			projectId: updatableContext.projectId,
+			taskId: updatableContext.taskId,
 			dialogOptions: {
 				target: e.target,
 				...options.dialogOptions,
@@ -78,9 +49,11 @@ export function TimerMenuButton(options) {
 	])
 }
 
-export function Timer({ menuButton, menuButtonOptions, timerContext }) {
-	async function onClick(e) {
-		const timer = await db.getTimer(timerContext.projectId, timerContext.taskId)
+export function Timer({ menuButton, menuButtonOptions, updatableContext }) {
+	async function onClick() {
+		if (updatableContext.disabled) return
+
+		const timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
 
 		if (timer) {
 			if (timer.running) {
@@ -93,16 +66,16 @@ export function Timer({ menuButton, menuButtonOptions, timerContext }) {
 		else {
 			await db.createTimer({
 				duration: 0,
-				projectId: timerContext.projectId,
+				projectId: updatableContext.projectId,
 				running: true,
 				started_at: Date.now(),
-				taskId: timerContext.taskId,
+				taskId: updatableContext.taskId,
 			})
 		}
 
 		// pause other timers
 		for (const timer of await db.getTimers()) {
-			if (timer.projectId === timerContext.projectId && timer.taskId === timerContext.taskId) continue
+			if (timer.projectId === updatableContext.projectId && timer.taskId === updatableContext.taskId) continue
 			if (!timer.running) continue
 			timer.duration += Date.now() - timer.started_at
 			timer.started_at = Date.now()
@@ -112,63 +85,65 @@ export function Timer({ menuButton, menuButtonOptions, timerContext }) {
 		}
 	}
 
+	let innerEl
 	let timer
 	let unsub
 
-	function draw(el) {
-		if (!timerContext.projectId || !timerContext.taskId) {
-			el.parentNode.parentNode.style.display = 'none'
+	function draw() {
+		if (!updatableContext.projectId || !updatableContext.taskId) {
+			innerEl.parentNode.parentNode.style.display = 'none'
 			return
 		}
-		el.parentNode.parentNode.style.display = ''
+		innerEl.parentNode.parentNode.style.display = ''
 
 		if (!timer) {
-			el.innerText = formatDuration(0)
-			el.classList.toggle('running', false)
-			el.classList.toggle('paused', false)
+			innerEl.innerText = shared.formatDuration(0)
+			innerEl.classList.toggle('running', false)
+			innerEl.classList.toggle('paused', false)
 			return
 		}
 
-		const duration = getTimerDuration(timer)
-		el.innerText = formatDuration(duration)
-		el.classList.toggle('running', timer.running)
-		el.classList.toggle('paused', !timer.running)
+		const duration = shared.getTimerDuration(timer)
+		innerEl.innerText = shared.formatDuration(duration)
+		innerEl.classList.toggle('running', timer.running)
+		innerEl.classList.toggle('paused', !timer.running)
 	}
 
-	async function update(el) {
-		if (!timerContext.projectId || !timerContext.taskId) {
+	async function update() {
+		if (!updatableContext.projectId || !updatableContext.taskId) {
 			timer = undefined
-			draw(el)
+			draw()
 			return
 		}
-		timer = await db.getTimer(timerContext.projectId, timerContext.taskId)
-		draw(el)
+		timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
+		draw()
 	}
 
-	async function onConnected(el) {
-		el = el.querySelector('.acit-timer-inner')
+	async function onConnected() {
 		unsub = bus.onMessage(({ kind, data }) => {
 			switch (kind) {
 				case 'tick':
 					if (!timer || !timer.running) break
-					const duration = getTimerDuration(timer)
-					const separator = el.innerText.includes(':') ? ' ' : ':'
-					el.innerText = formatDuration(duration, separator)
+					const duration = shared.getTimerDuration(timer)
+					const separator = innerEl.innerText.includes(':') ? ' ' : ':'
+					innerEl.innerText = shared.formatDuration(duration, separator)
 					break
 				case 'timer-created':
 				case 'timer-deleted':
 				case 'timer-updated':
-					if (data.projectId !== timerContext.projectId) break
-					if (data.taskId !== timerContext.taskId) break
-					update(el)
+					if (data.projectId !== updatableContext.projectId) break
+					if (data.taskId !== updatableContext.taskId) break
+					update()
 					break
 				case 'timers-deleted':
-					update(el)
+					update()
 					break
 			}
 		})
-		timerContext.onChanged = () => update(el)
-		update(el)
+		updatableContext.onUpdate = (updates) => {
+			Object.assign(updatableContext, updates)
+			update()
+		}
 	}
 
 	function onDisconnected() {
@@ -190,7 +165,6 @@ export function Timer({ menuButton, menuButtonOptions, timerContext }) {
 		boxSizing: 'border-box',
 		clear: 'none',
 		color: 'var(--page-paper-main)',
-		cursor: 'pointer',
 		display: 'flex',
 		fontSize: 12,
 		height: 22.5,
@@ -212,8 +186,18 @@ export function Timer({ menuButton, menuButtonOptions, timerContext }) {
 		},
 	}
 
-	return El('div.acit-timer', { onConnected, onDisconnected, style }, [
-		menuButton !== false && TimerMenuButton({ timerContext, style: { marginRight: 8 }, ...menuButtonOptions }),
-		El('div.acit-timer-inner', { style: innerStyle, onClick }, formatDuration(0))
+	if (!updatableContext.disabled) {
+		innerStyle.cursor = 'pointer'
+	}
+
+	innerEl = El('div.acit-timer-inner', { style: innerStyle, onClick }, shared.formatDuration(0))
+
+	const el = El('div.acit-timer', { onConnected, onDisconnected, style }, [
+		menuButton !== false && TimerMenuButton({ updatableContext, style: { marginRight: 8, ...menuButtonOptions?.style }, ...menuButtonOptions }),
+		innerEl,
 	])
+
+	update()
+
+	return el
 }

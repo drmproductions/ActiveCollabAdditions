@@ -1,12 +1,10 @@
 import * as SettingsDialog from './ui/dialogs/settings.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
-import * as api from './api.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
 import { El, getEl } from './ui/el.js'
 import { Timer } from './ui/timer.js'
-import { useCache } from './cache.js'
 import { useStyle } from './ui/style.js'
 
 const unloadFuncs = []
@@ -36,13 +34,13 @@ function createMissingTimerElements() {
 
 			if (isNaN(projectId) || isNaN(taskId)) continue
 
-			cache.set(`task-name-${projectId}-${taskId}`, taskNameEl.innerText)
+			cache.setTaskName({ projectId, taskId, name: taskNameEl.innerText })
 
 			// sometimes this disappears, so it's probably best if we always add it
 			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
 
 			if (!taskEl.querySelector('.acit-timer')) {
-				taskEl.prepend(Timer({ timerContext: { projectId, taskId } }))
+				taskEl.prepend(Timer({ updatableContext: { projectId, taskId } }))
 			}
 		}
 	}
@@ -121,13 +119,13 @@ onUnload(async () => {
 		justifyContent: 'center',
 	}
 
-	const timerContext = {}
-	const timerEl = Timer({ menuButtonOptions: { alwaysVisible: true }, timerContext })
+	const updatableContext = {}
+	const timerEl = Timer({ menuButtonOptions: { alwaysVisible: true, style: { marginRight: 16 } }, updatableContext })
 	{
 		const el = getEl(timerEl)
 		el.style.marginRight = ''
-		el.style.marginLeft = '16px'
-		el.style.top = '8px'
+		el.style.marginLeft = '8px'
+		el.style.top = '9px'
 		el.style.pointerEvents = 'all'
 	}
 
@@ -140,22 +138,12 @@ onUnload(async () => {
 		const projectId = timer?.projectId
 		const taskId = timer?.taskId
 
-		if (timerContext.projectId !== projectId || timerContext.taskId !== taskId) {
-			timerContext.projectId = projectId
-			timerContext.taskId = taskId
-			timerContext?.onChanged()
+		if (updatableContext.projectId !== projectId || updatableContext.taskId !== taskId) {
+			updatableContext?.onUpdate({ projectId, taskId })
 
 			if (timer) {
-				const projectName = await useCache(`project-name-${projectId}`, async () => {
-					const res = await api.fetchProject(projectId)
-					return res.single.name
-				})
-
-				const taskName = await useCache(`task-name-${projectId}-${taskId}`, async () => {
-					const res = await api.fetchTask(timer.projectId, timer.taskId)
-					return res.single.name
-				})
-
+				const projectName = await cache.getProjectName({ projectId })
+				const taskName = await cache.getTaskName({ projectId: timer.projectId, taskId: timer.taskId })
 				getEl(timerEl).title = `${projectName} - ${taskName}`
 			}
 		}

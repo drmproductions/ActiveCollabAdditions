@@ -1,12 +1,18 @@
 import * as SettingsDialog from './settings.js'
-import * as api from '../../api.js'
 import * as bus from '../../bus.js'
+import * as cache from '../../cache.js'
 import * as db from '../../db.js'
 import * as dialog from './dialog.js'
+import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El, getEl } from '../el.js'
 import { Timer, TimerMenuButton } from '../timer.js'
-import { useCache } from '../../cache.js'
+import { useAnimation } from '../style.js'
+
+const rotateAnimation = useAnimation({
+	0: { transform: 'rotate(0) scaleX(-1)' },
+	100: { transform: 'rotate(360deg) scaleX(-1)' },
+})
 
 function Project({ name, tasks, timer }) {
 	const timersStyle = {
@@ -21,7 +27,9 @@ function Project({ name, tasks, timer }) {
 	])
 }
 
-function Task({ name, timer: { projectId, taskId } }, index, timers) {
+function Task({ name, timer, timerEl }, index, timers) {
+	const { projectId, taskId } = timer
+
 	const style = {
 		backgroundColor: index % 2 === 0 ? 'var(--color-theme-300)' : 'var(--color-theme-200)',
 		color: 'var(--color-theme-700)',
@@ -58,35 +66,67 @@ function Task({ name, timer: { projectId, taskId } }, index, timers) {
 		padding: '0 10px',
 	}
 
-	const timerEl = Timer({ menuButton: false, timerContext: { projectId, taskId } })
-	getEl(timerEl).style.marginRight = ''
-
-	function onClickDelete() {
-		db.deleteTimer(projectId, taskId)
+	async function onClickCancelSubmit() {
+		delete timer.submittingState
+		await db.updateTimer(timer)
 	}
 
-	function onClickSubmit() {
+	async function onClickDelete() {
+		await db.deleteTimer(projectId, taskId)
 	}
 
-	return El('div', { style }, [
-		El('div', { style: timerStyle }, [timerEl]),
-		El('div', { style: { ...labelStyle, marginRight: 'auto' } }, name),
-		El('div', { style: buttonStyle }, [
-			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, timerContext: { projectId, taskId } }),
-		]),
-		El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
+	async function onClickSubmit() {
+		await shared.submitTimer({ projectId, taskId })
+	}
+
+	const children = []
+	children.push(El('div', { style: timerStyle }, [timerEl]))
+	children.push(El('div', { style: { ...labelStyle, marginRight: 'auto' } }, name))
+
+	if (timer.submittingState) {
+		if (timer.submittingState === 'submitting') {
+			children.push(El('div', {
+				style: {
+					alignItems: 'center',
+					animation: `${rotateAnimation} 3s linear infinite`,
+					display: 'flex',
+					padding: '0 10px',
+					transformOrigin: 'center',
+				},
+				title: 'Submitting...'
+			}, [
+				El('span.icon', {
+					innerHTML: angie.icons.svg_icons_recurring,
+					style: { ...iconStyle, scale: 1 },
+				}),
+			]))
+		}
+		children.push(El('div', { style: buttonStyle, title: 'Cancel Submit', onClick: onClickCancelSubmit }, [
+			El('span.icon', {
+				innerHTML: angie.icons.svg_icons_cancel,
+				style: { ...iconStyle, scale: 1.3 },
+			}),
+		]))
+	}
+	else {
+		children.push(El('div', { style: buttonStyle }, [
+			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, updatableContext: { projectId, taskId } }),
+		]))
+		children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
 			El('span.icon', {
 				innerHTML: angie.icons.svg_icons_icon_submit_time,
 				style: { ...iconStyle, scale: 1.2 },
 			}),
-		]),
-		El('div', { style: buttonStyle, title: 'Delete', onClick: onClickDelete }, [
+		]))
+		children.push(El('div', { style: buttonStyle, title: 'Delete', onClick: onClickDelete }, [
 			El('span.icon', {
 				innerHTML: angie.icons.main_menu_icon_trash,
 				style: { ...iconStyle, scale: 1.05 },
 			}),
-		]),
-	])
+		]))
+	}
+
+	return El('div', { style }, children)
 }
 
 export function hide() {
@@ -110,7 +150,21 @@ export function show() {
 		hide()
 	}
 
-	function onClickSubmit() {
+	async function onClickSubmit() {
+		const items = []
+		for (const timer of await db.getTimers()) {
+			const { projectId, taskId } = timer
+			const name = await cache.getTaskName({ projectId, taskId })
+			items.push({ projectId, taskId, name })
+			timer.submittingState = 'queued'
+			await db.updateTimer(timer)
+		}
+		items.sort((a, b) => a.name.localeCompare(b.name))
+		for (const { projectId, taskId } of items) {
+			const timer = await db.getTimer(projectId, taskId)
+			if (!timer || timer.submittingState !== 'queued') continue
+			await shared.submitTimer({ projectId, taskId })
+		}
 	}
 
 	function onClickShowSettings() {
@@ -122,6 +176,7 @@ export function show() {
 			switch (kind) {
 				case 'timer-created':
 				case 'timer-deleted':
+				case 'timer-updated':
 				case 'timers-deleted':
 					update()
 					break
@@ -134,6 +189,22 @@ export function show() {
 		unsub()
 	}
 
+	const submitAllButtonEl = DialogHeaderButton({
+		icon: angie.icons.svg_icons_icon_submit_time,
+		iconStyleExtra: { scale: 1.3 },
+		title: 'Submit All',
+		onClick: onClickSubmit,
+	})
+
+	const deleteAllButtonEl = DialogHeaderButton({
+		icon: angie.icons.main_menu_icon_trash,
+		iconStyleExtra: { scale: 1.2 },
+		title: 'Delete All',
+		onClick: onClickDelete,
+	})
+
+	const previousTimerElMap = new Map()
+
 	async function update() {
 		const timeout = setTimeout(() => {
 			getEl(bodyEl).innerHTML = ''
@@ -145,25 +216,41 @@ export function show() {
 			clearTimeout(timeout)
 			getEl(bodyEl).innerHTML = ''
 			getEl(bodyEl).appendChild(El('div', { style: bodyMessageStyle }, 'No timers started'))
+			submitAllButtonEl.style.display = 'none'
+			deleteAllButtonEl.style.display = 'none'
 			return
 		}
+
+		submitAllButtonEl.style.display = ''
+		deleteAllButtonEl.style.display = ''
 
 		const projectsMap = new Map()
 		for (const timer of timers) {
 			let project = projectsMap.get(timer.projectId)
 			if (!project) {
-				const name = await useCache(`project-name-${timer.projectId}`, async () => {
-					const res = await api.fetchProject(timer.projectId)
-					return res.single.name
-				})
+				const name = await cache.getProjectName({ projectId: timer.projectId })
 				project = { name, tasks: [], timer }
 				projectsMap.set(timer.projectId, project)
 			}
-			const name = await useCache(`task-name-${timer.projectId}-${timer.taskId}`, async () => {
-				const res = await api.fetchTask(timer.projectId, timer.taskId)
-				return res.single.name
-			})
-			project.tasks.push({ name, timer })
+
+			const name = await cache.getTaskName({ projectId: timer.projectId, taskId: timer.taskId })
+
+			const disabled = Boolean(timer.submittingState)
+			let timerEl
+			const id = `${timer.projectId}-${timer.taskId}`
+			const previousTimerEl = previousTimerElMap.get(id)
+			if (previousTimerEl) {
+				previousTimerEl.updatableContext?.onUpdate({ disabled })
+				timerEl = previousTimerEl.timerEl
+			}
+			else {
+				const updatableContext = { projectId: timer.projectId, taskId: timer.taskId }
+				timerEl = Timer({ disabled, menuButton: false, updatableContext })
+				getEl(timerEl).style.marginRight = ''
+				previousTimerElMap.set(id, { timerEl, updatableContext })
+			}
+
+			project.tasks.push({ name, timer, timerEl })
 		}
 
 		const projects = Array.from(projectsMap.values())
@@ -185,18 +272,8 @@ export function show() {
 				title: 'Settings',
 				onClick: onClickShowSettings,
 			}),
-			DialogHeaderButton({
-				icon: angie.icons.svg_icons_icon_submit_time,
-				iconStyleExtra: { scale: 1.3 },
-				title: 'Submit All',
-				onClick: onClickSubmit,
-			}),
-			DialogHeaderButton({
-				icon: angie.icons.main_menu_icon_trash,
-				iconStyleExtra: { scale: 1.2 },
-				title: 'Delete All',
-				onClick: onClickDelete,
-			}),
+			submitAllButtonEl,
+			deleteAllButtonEl,
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
 				iconStyleExtra: { scale: 1.7 },
