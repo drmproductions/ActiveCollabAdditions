@@ -1,4 +1,4 @@
-import * as SettingsDialog from './ui/dialogs/settings.js'
+import * as PreferencesDialog from './ui/dialogs/preferences.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
@@ -95,7 +95,7 @@ onUnload(() => {
 })
 
 onUnload(() => () => {
-	SettingsDialog.hide()
+	PreferencesDialog.hide()
 	TimersDialog.hide()
 })
 

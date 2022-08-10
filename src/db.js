@@ -50,15 +50,15 @@ export function deleteTimers() {
 	})
 }
 
-export function getSetting(key) {
+export function getPreference(key) {
 	return new Promise((resolve, reject) => {
 		let result
 
-		const transaction = db.transaction('settings', 'readonly')
+		const transaction = db.transaction('preferences', 'readonly')
 		transaction.oncomplete = () => resolve(result?.value)
 		transaction.onerror = reject
 
-		const objectStore = transaction.objectStore('settings')
+		const objectStore = transaction.objectStore('preferences')
 		objectStore.get(key).onsuccess = (event) => {
 			result = event.target.result
 		}
@@ -109,7 +109,7 @@ export function open() {
 			}
 
 			if (check(2)) {
-				result.createObjectStore('settings', { keyPath: 'key' })
+				result.createObjectStore('preferences', { keyPath: 'key' })
 			}
 		}
 		request.onsuccess = ({ target: { result } }) => {
@@ -134,16 +134,16 @@ export function updateTimer(timer) {
 	})
 }
 
-export function setSetting(key, value) {
+export function setPreference(key, value) {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction('settings', 'readwrite')
+		const transaction = db.transaction('preferences', 'readwrite')
 		transaction.oncomplete = () => {
 			bus.emit('setting-updated', { data: { key } })
 			resolve()
 		}
 		transaction.onerror = reject
 
-		const objectStore = transaction.objectStore('settings')
+		const objectStore = transaction.objectStore('preferences')
 		objectStore.put({ key, value })
 	})
 }

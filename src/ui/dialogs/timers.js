@@ -1,4 +1,4 @@
-import * as SettingsDialog from './settings.js'
+import * as PreferencesDialog from './preferences.js'
 import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
@@ -167,8 +167,8 @@ export function show() {
 		}
 	}
 
-	function onClickShowSettings() {
-		SettingsDialog.show()
+	function onClickShowPreferences() {
+		PreferencesDialog.show()
 	}
 
 	async function onConnected(el) {
@@ -269,8 +269,8 @@ export function show() {
 			DialogHeaderButton({
 				icon: angie.icons.main_menu_icon_system_settings,
 				iconStyleExtra: { scale: 1.3 },
-				title: 'Settings',
-				onClick: onClickShowSettings,
+				title: 'Preferences',
+				onClick: onClickShowPreferences,
 			}),
 			submitAllButtonEl,
 			deleteAllButtonEl,

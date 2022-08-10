@@ -4,7 +4,7 @@ import { El } from '../el.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 
 export function hide() {
-	dialog.hide('settings')
+	dialog.hide('preferences')
 }
 
 export async function show() {
@@ -13,9 +13,9 @@ export async function show() {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await db.getSetting('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
+		value: await db.getPreference('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
 		async onChange() {
-			await db.setSetting('timersDefaultJobType', this.value)
+			await db.setPreference('timersDefaultJobType', this.value)
 		},
 	}, angie.collections.job_types.map(({ id, name }) => {
 		return El('option', { value: id }, name)
@@ -26,9 +26,9 @@ export async function show() {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await db.getSetting('timersMinimumEntry') ?? 0,
+		value: await db.getPreference('timersMinimumEntry') ?? 0,
 		async onChange() {
-			await db.setSetting('timersMinimumEntry', this.value)
+			await db.setPreference('timersMinimumEntry', this.value)
 		},
 	}, [
 		El('option', { value: 0 }, 'No Minimum'),
@@ -43,9 +43,9 @@ export async function show() {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await db.getSetting('timersRoundingInterval') ?? 0,
+		value: await db.getPreference('timersRoundingInterval') ?? 0,
 		async onChange() {
-			await db.setSetting('timersRoundingInterval', this.value)
+			await db.setPreference('timersRoundingInterval', this.value)
 		},
 	}, [
 		El('option', { value: 0 }, 'Don\'t Round'),
@@ -55,7 +55,7 @@ export async function show() {
 	])
 
 	const dialogEl = Dialog({ width: 550 }, [
-		DialogHeader('Settings', [
+		DialogHeader('Preferences', [
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
 				iconStyleExtra: { scale: 1.7 },
@@ -80,5 +80,5 @@ export async function show() {
 			]),
 		]),
 	])
-	dialog.show('settings', dialogEl)
+	dialog.show('preferences', dialogEl)
 }
