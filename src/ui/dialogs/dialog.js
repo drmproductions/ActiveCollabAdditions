@@ -41,7 +41,7 @@ export function Dialog(options = {}, children) {
 
 export function DialogBody(options = {}, children) {
 	const style = {
-		maxHeight: 'calc(100vh - 40px - 40px)',
+		maxHeight: 'calc(100vh - 120px)',
 		overflowY: 'auto',
 		padding: '0 20px 20px 20px',
 	}

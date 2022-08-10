@@ -54,7 +54,7 @@ export async function show() {
 		El('option', { value: 60 }, '60 Minutes'),
 	])
 
-	const dialogEl = Dialog({}, [
+	const dialogEl = Dialog({ width: 550 }, [
 		DialogHeader('Settings', [
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
@@ -64,7 +64,7 @@ export async function show() {
 			}),
 		]),
 		DialogBody({}, [
-			El('div', { style: { display: 'flex', gap: 36 } }, [
+			El('div', { style: { display: 'flex', gap: 24 } }, [
 				El('div', [
 					El('h2', 'Default Job Type'),
 					timersDefaultJobTypeEl,
