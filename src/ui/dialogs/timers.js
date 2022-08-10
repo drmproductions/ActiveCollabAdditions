@@ -156,7 +156,7 @@ export function show() {
 	async function onClickDelete() {
 		const yes = await ConfirmPopup.show({
 			message: 'Delete All Timers?',
-			target: deleteAllButtonEl.firstChild,
+			target: this.firstChild,
 		})
 		if (!yes) return
 		await db.deleteTimers()
@@ -165,7 +165,7 @@ export function show() {
 	async function onClickSubmit() {
 		const yes = await ConfirmPopup.show({
 			message: 'Submit All Timers?',
-			target: submitAllButtonEl.firstChild,
+			target: this.firstChild,
 		})
 		if (!yes) return
 		const items = []
