@@ -73,6 +73,11 @@ function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }
 	}
 
 	async function onClickDelete() {
+		const yes = await ConfirmPopup.show({
+			message: 'Delete Timer?',
+			target: this.firstChild,
+		})
+		if (!yes) return
 		await db.deleteTimer(projectId, taskId)
 	}
 
