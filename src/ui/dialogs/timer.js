@@ -2,6 +2,7 @@ import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
 import * as dialog from './dialog.js'
+import * as preferences from '../../preferences.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
@@ -201,7 +202,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			paddingTop: '6px !important',
 			width: 'fit-content'
 		},
-		value: await db.getSetting('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
+		value: await preferences.getTimersDefaultJobType(),
 		async onChange() {
 			await createOrUpdateTimer(projectId, taskId, {
 				jobTypeId: parseInt(this.value),

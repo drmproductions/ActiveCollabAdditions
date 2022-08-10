@@ -1,6 +1,7 @@
 import * as api from './api.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
+import * as preferences from './preferences.js'
 import { TIMERS_WITH_SECONDS } from './env.js'
 
 export function formatDuration(duration = 0, separator = ':', includeSeconds = TIMERS_WITH_SECONDS) {
@@ -45,8 +46,8 @@ export function parseTime(time) {
 }
 
 export async function roundDuration(duration) {
-	const timersMinimumEntry = (await db.getPreference('timersMinimumEntry') ?? 0) * 60 * 1000
-	const timersRoundingInterval = (await db.getPreference('timersRoundingInterval') ?? 0) * 60 * 1000
+	const timersMinimumEntry = (await preferences.getTimersMinimumEntry()) * 60 * 1000
+	const timersRoundingInterval = (await preferences.getTimersRoundingInterval()) * 60 * 1000
 
 	duration = Math.max(duration, timersMinimumEntry)
 
@@ -69,7 +70,7 @@ export async function submitTimer({ projectId, taskId }) {
 	const d = new Date()
 	const recordDate = `${d.getFullYear()}-${d.getMonth().toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
 
-	const jobTypeId = timer.jobTypeId ?? await db.getSetting('timersDefaultJobType') ?? angie.collections.job_types[0]?.id
+	const jobTypeId = timer.jobTypeId ?? await preferences.getTimersDefaultJobType()
 
 	try {
 		timer.submittingState = 'submitting'

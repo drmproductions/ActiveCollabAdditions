@@ -1,5 +1,5 @@
-import * as db from '../../db.js'
 import * as dialog from './dialog.js'
+import * as preferences from '../../preferences.js'
 import { El } from '../el.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 
@@ -13,9 +13,9 @@ export async function show() {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await db.getPreference('timersDefaultJobType') ?? angie.collections.job_types[0]?.id,
+		value: await preferences.getTimersDefaultJobType(),
 		async onChange() {
-			await db.setPreference('timersDefaultJobType', this.value)
+			await preferences.setTimersDefaultJobType(parseInt(this.value))
 		},
 	}, angie.collections.job_types.map(({ id, name }) => {
 		return El('option', { value: id }, name)
@@ -26,9 +26,9 @@ export async function show() {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await db.getPreference('timersMinimumEntry') ?? 0,
+		value: await preferences.getTimersMinimumEntry(),
 		async onChange() {
-			await db.setPreference('timersMinimumEntry', parseInt(this.value))
+			await preferences.setTimersMinimumEntry(parseInt(this.value))
 		},
 	}, [
 		El('option', { value: 0 }, 'No Minimum'),
@@ -43,9 +43,9 @@ export async function show() {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await db.getPreference('timersRoundingInterval') ?? 0,
+		value: await preferences.getTimersRoundingInterval(),
 		async onChange() {
-			await db.setPreference('timersRoundingInterval', parseInt(this.value))
+			await preferences.setTimersRoundingInterval(parseInt(this.value))
 		},
 	}, [
 		El('option', { value: 0 }, 'Don\'t Round'),
