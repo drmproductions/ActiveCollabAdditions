@@ -1,6 +1,7 @@
 import * as api from './api.js'
 
-const cache = new Map()
+const cacheLockFuncsMap = new Map()
+const cacheMap = new Map()
 
 export async function getProject({ projectId }) {
 	return await useCache(`project-${projectId}`, async () => {
@@ -28,19 +29,52 @@ export async function getTaskName({ projectId, taskId }) {
 	})
 }
 
-export async function set(key, value) {
-	cache.set(key, value)
+function set(key, value) {
+	cacheMap.set(key, value)
 }
 
-export async function setTaskName({ projectId, taskId, name }) {
-	cache.set(`task-name-${projectId}-${taskId}`, name)
+export function setTaskName({ projectId, taskId, name }) {
+	set(`task-name-${projectId}-${taskId}`, name)
 }
 
 export async function useCache(key, func) {
-	if (cache.has(key)) {
-		return cache.get(key)
+	if (cacheMap.has(key)) {
+		return cacheMap.get(key)
 	}
-	const value = await func()
-	cache.set(key, value)
-	return value
+
+	if (cacheLockFuncsMap.has(key)) {
+		const funcs = cacheLockFuncsMap.get(key)
+		return new Promise((resolve, reject) => funcs.push({ resolve, reject }))
+	}
+
+	const funcs = []
+	cacheLockFuncsMap.set(key, funcs)
+
+	try {
+		const value = await func()
+		cacheMap.set(key, value)
+		for (const { resolve } of funcs) {
+			try {
+				resolve(value)
+			}
+			catch (e) {
+				console.log('failed to resolve cache lock function')
+			}
+		}
+		return value
+	}
+	catch (e) {
+		for (const { reject } of funcs) {
+			try {
+				reject(e)
+			}
+			catch (e) {
+				console.log('failed to reject cache lock function')
+			}
+		}
+		throw e
+	}
+	finally {
+		cacheLockFuncsMap.delete(key)
+	}
 }
