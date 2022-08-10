@@ -30,6 +30,7 @@
 				"src/bus.js",
 				"src/cache.js",
 				"src/db.js",
+				"src/env.js",
 				"src/utils.js",
 				"src/ui/el.js",
 				"src/ui/style.js",

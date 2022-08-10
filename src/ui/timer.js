@@ -3,8 +3,6 @@ import * as bus from '../bus.js'
 import * as db from '../db.js'
 import { El } from './el.js'
 
-const TIMERS_WITH_SECONDS = false
-
 export function formatDuration(duration, separator = ':') {
 	const d = new Date(duration)
 	const parts = [
@@ -34,6 +32,7 @@ export function parseTime(time) {
 	}
 	return duration * 1000
 }
+import { TIMERS_WITH_SECONDS } from '../env.js'
 
 export function TimerMenuButton(options) {
 	const { timerContext } = options
