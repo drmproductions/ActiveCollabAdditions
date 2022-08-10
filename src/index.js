@@ -126,7 +126,13 @@ onUnload(async () => {
 				running: { background: '#48f311', text: 'black' },
 			},
 			outline: {
-				initial: { background: '#ff3c3c', text: 'var(--color-theme-900)' },
+				initial: {
+					background: 'var(--border-primary)',
+					text: 'var(--color-theme-900)',
+					hover: {
+						background: '#ff3c3c',
+					},
+				},
 				paused: { background: '#ffc637', text: 'var(--color-theme-900)' },
 				running: { background: '#48f311', text: 'var(--color-theme-900)' },
 			},
@@ -152,18 +158,20 @@ onUnload(async () => {
 						borderColor: initial.hover?.background ?? initial.background,
 					},
 					'.paused': {
+						borderColor: paused.background,
+						color: paused.text,
+						transition: 'none',
 						':hover': {
 							borderColor: paused.hover?.background ?? paused.background,
 						},
-						borderColor: paused.background,
-						color: paused.text,
 					},
 					'.running': {
+						borderColor: running.background,
+						color: running.text,
+						transition: 'none',
 						':hover': {
 							borderColor: running.hover?.background ?? running.background,
 						},
-						borderColor: running.background,
-						color: running.text,
 					},
 				}
 			default:
