@@ -1,3 +1,4 @@
+import * as utils from '../../utils.js'
 import { El, getEl } from '../el.js'
 
 export function Dialog(options = {}, children) {
@@ -161,7 +162,9 @@ function openDialogCount() {
 }
 
 function preventScrolling(e) {
-	e.preventDefault()
+	if (utils.getScrollParent(e.target) === document.body.parentNode) {
+		e.preventDefault()
+	}
 }
 
 export function hide(id) {

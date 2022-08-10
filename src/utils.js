@@ -1,3 +1,13 @@
+export function getScrollParent(node) {
+	if (node == null) {
+		return null
+	}
+	if (node.scrollHeight > node.clientHeight) {
+		return node
+	}
+	return getScrollParent(node.parentNode)
+}
+
 export function hash(value) {
 	if (typeof value !== 'object') {
 		return value
