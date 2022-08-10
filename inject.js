@@ -1,7 +1,7 @@
 (() => {
-	const tests = ['activecollab', '/api/v1', 'activecollab_csrf', 'angie.api_url']
-	const scripts = Array.prototype.slice.call(document.getElementsByTagName('script'))
-	const isActiveCollabPage = scripts.some(el => !tests.some(test => el.innerText.toLowerCase().includes(test)))
+	const tests = ['activecollab', 'activecollab_csrf', 'angie.api_url']
+	const scripts = Array.from(document.getElementsByTagName('script'))
+	const isActiveCollabPage = scripts.some(el => tests.some(test => el.innerText.toLowerCase().includes(test)))
 	if (!isActiveCollabPage) return
 
 	let script
