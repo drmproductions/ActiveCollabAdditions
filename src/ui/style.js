@@ -12,25 +12,54 @@ export function formatNumberToPixels(name, value) {
 	return `${value}px`
 }
 
-export function useStyle(style) {
-	const key = utils.hash(style)
-	let className = styleMap.get(key)
-	if (className) {
-		return className
+function get(def) {
+	const key = utils.hash(def)
+	let name = styleMap.get(key)
+	if (name) return [name, false]
+	name = `generated_rule_${styleMap.size}`
+	styleMap.set(key, name)
+	return [name, true]
+}
+
+export function useAnimation(def) {
+	const [name, isNew] = get(def)
+	if (!isNew) return name
+
+	const chunks = []
+	chunks.push(`@keyframes ${name}`)
+	chunks.push('{')
+	for (let [name, subDef] of Object.entries(def)) {
+		chunks.push(isNaN(parseInt(name)) ? name : `${name}%`)
+		chunks.push('{')
+		for (let [name, value] of Object.entries(subDef)) {
+			name = name.replace(/[A-Z]/g, i => `-${i.toLowerCase()}`)
+			value = formatNumberToPixels(name, value)
+			chunks.push(`${name}:${value};`)
+		}
+		chunks.push('}')
 	}
-	className = `generated_class_${styleMap.size}`
-	styleMap.set(key, className)
+	chunks.push('}')
+
+	const css = chunks.join('')
+	styleEl.sheet.insertRule(css, 0)
+
+	return name
+}
+
+export function useStyle(def) {
+	const [name, isNew] = get(def)
+	if (!isNew) return name
 
 	const rules = []
-	rules.push({ selector: `.${className}`, chunks: [], style })
+	rules.push({ selector: `.${name}`, chunks: [], def })
 	for (let i = 0; i < rules.length; i++) {
-		const { selector, chunks, style } = rules[i]
+		const { selector, chunks, def } = rules[i]
 		chunks.push(selector)
 		chunks.push('{')
-		for (let [name, value] of Object.entries(style)) {
+		for (let [name, value] of Object.entries(def)) {
 			const name0 = name.trimStart()[0]
 			if (name0 === ':' || name0 === '>' || name0 === '.') {
-				rules.push({ selector: `${selector}${name}`, chunks: [], style: value })
+				rules.push({ selector: `${selector}${name}`, chunks: [], def: value })
 				continue
 			}
 			name = name.replace(/[A-Z]/g, i => `-${i.toLowerCase()}`)
@@ -44,5 +73,5 @@ export function useStyle(style) {
 		const css = chunks.join('')
 		styleEl.sheet.insertRule(css, 0)
 	}
-	return className
+	return name
 }
