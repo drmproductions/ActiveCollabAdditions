@@ -1,9 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "Active Collab Inline Timers 2",
+	"name": "ActiveCollabAdditions",
 	"version": "0.0.0",
-	"description": "Provides instant access to timers on any ActiveCollab page that lists tasks. Refactored to use modern web technologies.",
-
+	"description": "Provides instant access to timers on any ActiveCollab page that lists tasks. Refactored to use modern web technologies. Along with some other additions.",
 	"icons": {
 		"16": "icons/icon16.png",
 		"19": "icons/icon19.png",
@@ -13,7 +12,6 @@
 		"64": "icons/icon64.png",
 		"128": "icons/icon128.png"
 	},
-
 	"author": "DRM Productions",
 	"content_scripts": [
 		{
