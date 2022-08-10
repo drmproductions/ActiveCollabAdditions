@@ -210,4 +210,4 @@ onUnload(() => bus.onMessage(({ kind }) => {
 	}
 }))
 
-console.log('Active Collab Additions loaded!')
+console.log('ActiveCollabAdditions loaded!')
