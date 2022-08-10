@@ -7,6 +7,21 @@ export function close() {
 	db = undefined
 }
 
+export function createFavoriteTask(favoriteTask) {
+	const { projectId, taskId } = favoriteTask
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction('favoriteTasks', 'readwrite')
+		transaction.oncomplete = () => {
+			bus.emit('favorite-task-created', { data: { projectId, taskId } })
+			resolve()
+		}
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('favoriteTasks')
+		objectStore.add(favoriteTask)
+	})
+}
+
 export function createTimer(timer) {
 	const { projectId, taskId } = timer
 	return new Promise((resolve, reject) => {
@@ -19,6 +34,20 @@ export function createTimer(timer) {
 
 		const objectStore = transaction.objectStore('timers')
 		objectStore.add(timer)
+	})
+}
+
+export function deleteFavoriteTask(projectId, taskId) {
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction('favoriteTasks', 'readwrite')
+		transaction.oncomplete = () => {
+			bus.emit('favorite-task-deleted', { data: { projectId, taskId } })
+			resolve()
+		}
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('favoriteTasks')
+		objectStore.delete([projectId, taskId])
 	})
 }
 
@@ -47,6 +76,36 @@ export function deleteTimers() {
 
 		const objectStore = transaction.objectStore('timers')
 		objectStore.clear()
+	})
+}
+
+export function getFavoriteTask(projectId, taskId) {
+	return new Promise((resolve, reject) => {
+		let result
+
+		const transaction = db.transaction('favoriteTasks', 'readonly')
+		transaction.oncomplete = () => resolve(result)
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('favoriteTasks')
+		objectStore.get([projectId, taskId]).onsuccess = (event) => {
+			result = event.target.result
+		}
+	})
+}
+
+export function getFavoriteTasks() {
+	return new Promise((resolve, reject) => {
+		let result
+
+		const transaction = db.transaction('favoriteTasks', 'readonly')
+		transaction.oncomplete = () => resolve(result)
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('favoriteTasks')
+		objectStore.getAll().onsuccess = (event) => {
+			result = event.target.result
+		}
 	})
 }
 
@@ -97,7 +156,7 @@ export function getTimers() {
 
 export function open() {
 	return new Promise((resolve, reject) => {
-		const request = window.indexedDB.open('active-collab-inline-timers', 2)
+		const request = window.indexedDB.open('active-collab-inline-timers', 3)
 		request.onerror = (event) => {
 			reject(event)
 		}
@@ -110,6 +169,10 @@ export function open() {
 
 			if (check(2)) {
 				result.createObjectStore('preferences', { keyPath: 'key' })
+			}
+
+			if (check(3)) {
+				result.createObjectStore('favoriteTasks', { keyPath: ['projectId', 'taskId'] })
 			}
 		}
 		request.onsuccess = ({ target: { result } }) => {

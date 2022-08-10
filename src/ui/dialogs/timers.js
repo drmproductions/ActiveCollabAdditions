@@ -14,7 +14,7 @@ const rotateAnimation = useAnimation({
 	100: { transform: 'rotate(360deg) scaleX(-1)' },
 })
 
-function Project({ name, tasks, timer }) {
+function Project({ name, tasks }) {
 	const timersStyle = {
 		border: '1px solid var(--border-primary)',
 		borderRadius: '6px',
@@ -27,9 +27,7 @@ function Project({ name, tasks, timer }) {
 	])
 }
 
-function Task({ name, timer, timerEl }, index, timers) {
-	const { projectId, taskId } = timer
-
+function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }, index, timers) {
 	const style = {
 		backgroundColor: index % 2 === 0 ? 'var(--color-theme-300)' : 'var(--color-theme-200)',
 		color: 'var(--color-theme-700)',
@@ -67,6 +65,8 @@ function Task({ name, timer, timerEl }, index, timers) {
 	}
 
 	async function onClickCancelSubmit() {
+		const timer = await db.getTimer(projectId, taskId)
+		if (!timer) return
 		delete timer.submittingState
 		await db.updateTimer(timer)
 	}
@@ -83,8 +83,8 @@ function Task({ name, timer, timerEl }, index, timers) {
 	children.push(El('div', { style: timerStyle }, [timerEl]))
 	children.push(El('div', { style: { ...labelStyle, marginRight: 'auto' } }, name))
 
-	if (timer.submittingState) {
-		if (timer.submittingState === 'submitting') {
+	if (submittingState) {
+		if (submittingState === 'submitting') {
 			children.push(El('div', {
 				style: {
 					alignItems: 'center',
@@ -112,18 +112,20 @@ function Task({ name, timer, timerEl }, index, timers) {
 		children.push(El('div', { style: buttonStyle }, [
 			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, updatableContext: { projectId, taskId } }),
 		]))
-		children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
-			El('span.icon', {
-				innerHTML: angie.icons.svg_icons_icon_submit_time,
-				style: { ...iconStyle, scale: 1.2 },
-			}),
-		]))
-		children.push(El('div', { style: buttonStyle, title: 'Delete', onClick: onClickDelete }, [
-			El('span.icon', {
-				innerHTML: angie.icons.main_menu_icon_trash,
-				style: { ...iconStyle, scale: 1.05 },
-			}),
-		]))
+		if (timerExists) {
+			children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
+				El('span.icon', {
+					innerHTML: angie.icons.svg_icons_icon_submit_time,
+					style: { ...iconStyle, scale: 1.2 },
+				}),
+			]))
+			children.push(El('div', { style: buttonStyle, title: 'Delete', onClick: onClickDelete }, [
+				El('span.icon', {
+					innerHTML: angie.icons.main_menu_icon_trash,
+					style: { ...iconStyle, scale: 1.05 },
+				}),
+			]))
+		}
 	}
 
 	return El('div', { style }, children)
@@ -141,13 +143,12 @@ export function show() {
 		alignItems: 'center',
 		display: 'flex',
 		fontSize: 16,
-		height: 200,
+		height: 90,
 		justifyContent: 'center',
 	}
 
 	async function onClickDelete() {
 		await db.deleteTimers()
-		hide()
 	}
 
 	async function onClickSubmit() {
@@ -174,6 +175,8 @@ export function show() {
 	async function onConnected(el) {
 		unsub = bus.onMessage(({ kind, data }) => {
 			switch (kind) {
+				case 'favorite-task-created':
+				case 'favorite-task-deleted':
 				case 'timer-created':
 				case 'timer-deleted':
 				case 'timer-updated':
@@ -203,7 +206,23 @@ export function show() {
 		onClick: onClickDelete,
 	})
 
-	const previousTimerElMap = new Map()
+	const previousElMap = new Map()
+
+	function createOrUpdateTimerEl(projectId, taskId, disabled) {
+		const id = `${projectId}-${taskId}`
+
+		const previousTimerEl = previousElMap.get(id)
+		if (previousTimerEl) {
+			previousTimerEl.updatableContext?.onUpdate({ disabled })
+			return previousTimerEl.timerEl
+		}
+
+		const updatableContext = { projectId, taskId }
+		const timerEl = Timer({ disabled, menuButton: false, updatableContext })
+		getEl(timerEl).style.marginRight = ''
+		previousElMap.set(id, { timerEl, updatableContext })
+		return timerEl
+	}
 
 	async function update() {
 		const timeout = setTimeout(() => {
@@ -211,50 +230,87 @@ export function show() {
 			getEl(bodyEl).appendChild(El('div', { style: bodyMessageStyle }, 'LOADING...'))
 		}, 500)
 
+		const favoriteTasks = await db.getFavoriteTasks()
 		const timers = await db.getTimers()
-		if (timers.length === 0) {
+		const hasTimers = timers.length > 0
+
+		submitAllButtonEl.style.display = hasTimers ? '' : 'none'
+		deleteAllButtonEl.style.display = hasTimers ? '' : 'none'
+
+		if (favoriteTasks.length === 0 && !hasTimers) {
 			clearTimeout(timeout)
 			getEl(bodyEl).innerHTML = ''
 			getEl(bodyEl).appendChild(El('div', { style: bodyMessageStyle }, 'No timers started'))
-			submitAllButtonEl.style.display = 'none'
-			deleteAllButtonEl.style.display = 'none'
 			return
 		}
 
-		submitAllButtonEl.style.display = ''
-		deleteAllButtonEl.style.display = ''
-
+		const projects = []
+		const favoriteTasksSet = new Set()
 		const projectsMap = new Map()
+		const timersMap = new Map()
+
 		for (const timer of timers) {
-			let project = projectsMap.get(timer.projectId)
-			if (!project) {
-				const name = await cache.getProjectName({ projectId: timer.projectId })
-				project = { name, tasks: [], timer }
-				projectsMap.set(timer.projectId, project)
-			}
-
-			const name = await cache.getTaskName({ projectId: timer.projectId, taskId: timer.taskId })
-
-			const disabled = Boolean(timer.submittingState)
-			let timerEl
-			const id = `${timer.projectId}-${timer.taskId}`
-			const previousTimerEl = previousTimerElMap.get(id)
-			if (previousTimerEl) {
-				previousTimerEl.updatableContext?.onUpdate({ disabled })
-				timerEl = previousTimerEl.timerEl
-			}
-			else {
-				const updatableContext = { projectId: timer.projectId, taskId: timer.taskId }
-				timerEl = Timer({ disabled, menuButton: false, updatableContext })
-				getEl(timerEl).style.marginRight = ''
-				previousTimerElMap.set(id, { timerEl, updatableContext })
-			}
-
-			project.tasks.push({ name, timer, timerEl })
+			const { projectId, taskId } = timer
+			timersMap.set(`${projectId}-${taskId}`, timer)
 		}
 
-		const projects = Array.from(projectsMap.values())
-		projects.sort((a, b) => a.name.localeCompare(b.name))
+		if (favoriteTasks.length > 0) {
+			const project = { name: 'Favorites', tasks: [] }
+			projects.push(project)
+
+			for (const { projectId, taskId } of favoriteTasks) {
+				favoriteTasksSet.add(`${projectId}-${taskId}`)
+
+				const timer = timersMap.get(`${projectId}-${taskId}`)
+				const name = await cache.getTaskName({ projectId, taskId })
+				const submittingState = timer?.submittingState
+				const disabled = Boolean(submittingState)
+				const timerEl = createOrUpdateTimerEl(projectId, taskId, disabled)
+
+				project.tasks.push({
+					name,
+					projectId,
+					submittingState,
+					taskId,
+					timerEl,
+					timerExists: Boolean(timer),
+				})
+			}
+		}
+
+		for (const timer of timers) {
+			const { projectId, submittingState, taskId } = timer
+
+			if (favoriteTasksSet.has(`${projectId}-${taskId}`)) {
+				continue
+			}
+
+			let project = projectsMap.get(projectId)
+			if (!project) {
+				const name = await cache.getProjectName({ projectId })
+				project = { name, tasks: [] }
+				projectsMap.set(projectId, project)
+			}
+
+			const name = await cache.getTaskName({ projectId, taskId })
+			const disabled = Boolean(submittingState)
+			const timerEl = createOrUpdateTimerEl(projectId, taskId, disabled)
+
+			project.tasks.push({
+				name,
+				projectId,
+				submittingState,
+				taskId,
+				timerEl,
+				timerExists: true,
+			})
+		}
+
+		const projectsWithTimers = Array.from(projectsMap.values())
+		projectsWithTimers.sort((a, b) => a.name.localeCompare(b.name))
+		for (const project of projectsWithTimers) {
+			projects.push(project)
+		}
 
 		clearTimeout(timeout)
 		getEl(bodyEl).innerHTML = ''

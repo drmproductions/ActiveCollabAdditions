@@ -58,7 +58,7 @@ export function useStyle(def) {
 		chunks.push('{')
 		for (let [name, value] of Object.entries(def)) {
 			const name0 = name.trimStart()[0]
-			if (name0 === ':' || name0 === '>' || name0 === '.') {
+			if (name0 === ':' || name0 === '>' || name0 === '.' || name[0] === ' ') {
 				rules.push({ selector: `${selector}${name}`, chunks: [], def: value })
 				continue
 			}

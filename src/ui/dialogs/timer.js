@@ -6,6 +6,15 @@ import * as preferences from '../../preferences.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
+import { useStyle } from '../style.js'
+
+const unfavoriteTaskClassName = useStyle({
+	' path': {
+		fill: 'none',
+		stroke: 'var(--color-theme-900)',
+		strokeWidth: 2,
+	},
+})
 
 class TimeInputHistoryStack {
 	constructor(inputEl) {
@@ -85,10 +94,16 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		value: shared.formatDuration(0),
 		async onChange() {
 			try {
-				await createOrUpdateTimer(projectId, taskId, {
-					duration: shared.parseTime(this.value),
-					started_at: Date.now(),
-				})
+				const duration = shared.parseTime(this.value)
+				if (duration === 0) {
+					await db.deleteTimer(projectId, taskId)
+				}
+				else {
+					await createOrUpdateTimer(projectId, taskId, {
+						duration,
+						started_at: Date.now(),
+					})
+				}
 			}
 			catch (e) {
 				const timer = await db.getTimer(projectId, taskId)
@@ -238,6 +253,17 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	async function onClickDelete() {
 		await db.deleteTimer(projectId, taskId)
+		hide()
+	}
+
+	async function onClickFavorite() {
+		const favoriteTask = await db.getFavoriteTask(projectId, taskId)
+		if (favoriteTask) {
+			await db.deleteFavoriteTask(projectId, taskId)
+		}
+		else {
+			await db.createFavoriteTask({ projectId, taskId })
+		}
 	}
 
 	async function onClickSubmit() {
@@ -245,7 +271,14 @@ export async function show({ projectId, taskId, dialogOptions }) {
 	}
 
 	async function update(stillUpdateTimeIfRunning) {
+		const favoriteTask = await db.getFavoriteTask(projectId, taskId)
+		favoritedButtonEl.classList.toggle(unfavoriteTaskClassName, !Boolean(favoriteTask))
+
 		const timer = await db.getTimer(projectId, taskId)
+
+		submitButtonEl.style.display = timer ? '' : 'none'
+		deleteButtonEl.style.display = timer ? '' : 'none'
+
 		if (!timer) return
 
 		if (!timer.running || stillUpdateTimeIfRunning) {
@@ -274,32 +307,23 @@ export async function show({ projectId, taskId, dialogOptions }) {
 	async function onConnected(el) {
 		unsub = bus.onMessage(({ kind, data }) => {
 			switch (kind) {
+				case 'favorite-task-created':
+				case 'favorite-task-deleted':
 				case 'timer-created':
 				case 'timer-deleted':
 				case 'timer-updated':
+				case 'timers-deleted':
 					if (data.projectId !== projectId) break
 					if (data.taskId !== taskId) break
-					if (kind === 'timer-deleted') {
-						hide()
-					}
-					else {
-						update()
-					}
-					break
-				case 'timers-deleted':
-					hide()
+					update()
 					break
 			}
 		})
 		const timer = update(true)
-		if (!timer) {
-			hide()
-			return
-		}
 
 		descriptionEl.focus()
 
-		if (typeof timer.isBillable !== 'boolean') {
+		if (timer && typeof timer.isBillable !== 'boolean') {
 			const res = await cache.getTask({ projectId, taskId })
 			isBillableEl.checked = res.single.is_billable
 		}
@@ -310,22 +334,34 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		unsub()
 	}
 
+	const deleteButtonEl = DialogHeaderButton({
+		icon: angie.icons.main_menu_icon_trash,
+		iconStyleExtra: { scale: 1.2 },
+		title: 'Delete',
+		onClick: onClickDelete,
+	})
+
+	const favoritedButtonEl = DialogHeaderButton({
+		icon: angie.icons.svg_icons_star,
+		iconStyleExtra: { scale: 1.1 },
+		title: 'Favorite',
+		onClick: onClickFavorite,
+	})
+
+	const submitButtonEl = DialogHeaderButton({
+		icon: angie.icons.svg_icons_icon_submit_time,
+		iconStyleExtra: { scale: 1.3 },
+		title: 'Submit',
+		onClick: onClickSubmit,
+	})
+
 	const name = await cache.getTaskName({ projectId, taskId })
 
 	const dialogEl = Dialog({ onConnected, onDisconnected, width: 550, ...dialogOptions }, [
 		DialogHeader(name, [
-			DialogHeaderButton({
-				icon: angie.icons.svg_icons_icon_submit_time,
-				iconStyleExtra: { scale: 1.3 },
-				title: 'Submit',
-				onClick: onClickSubmit,
-			}),
-			DialogHeaderButton({
-				icon: angie.icons.main_menu_icon_trash,
-				iconStyleExtra: { scale: 1.2 },
-				title: 'Delete',
-				onClick: onClickDelete,
-			}),
+			favoritedButtonEl,
+			submitButtonEl,
+			deleteButtonEl,
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
 				iconStyleExtra: { scale: 1.7 },
