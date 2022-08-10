@@ -1,7 +1,7 @@
 import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
-import * as dialog from './dialog.js'
+import * as overlay from '../overlay.js'
 import * as preferences from '../../preferences.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
@@ -74,7 +74,7 @@ async function createOrUpdateTimer(projectId, taskId, updates) {
 }
 
 export function hide() {
-	dialog.hide('timer')
+	overlay.hide('timer')
 }
 
 export async function show({ projectId, taskId, dialogOptions }) {
@@ -371,5 +371,5 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		]),
 		bodyEl,
 	])
-	dialog.show('timer', dialogEl, overlayOptions)
+	overlay.show('timer', overlayOptions, dialogEl)
 }

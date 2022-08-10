@@ -1,11 +1,11 @@
-import * as dialog from './dialog.js'
+import * as overlay from '../overlay.js'
 import * as preferences from '../../preferences.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
 import { Timer } from '../timer.js'
 
 export function hide() {
-	dialog.hide('preferences')
+	overlay.hide('preferences')
 }
 
 export async function show() {
@@ -129,5 +129,5 @@ export async function show() {
 			]),
 		]),
 	])
-	dialog.show('preferences', dialogEl)
+	overlay.show('preferences', {}, dialogEl)
 }

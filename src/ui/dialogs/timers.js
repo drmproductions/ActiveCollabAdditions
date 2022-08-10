@@ -2,7 +2,7 @@ import * as PreferencesDialog from './preferences.js'
 import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
-import * as dialog from './dialog.js'
+import * as overlay from '../overlay.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El, getEl } from '../el.js'
@@ -132,7 +132,7 @@ function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }
 }
 
 export function hide() {
-	dialog.hide('timers')
+	overlay.hide('timers')
 }
 
 export function show() {
@@ -339,5 +339,5 @@ export function show() {
 		]),
 		bodyEl,
 	])
-	dialog.show('timers', dialogEl)
+	overlay.show('timers', {}, dialogEl)
 }

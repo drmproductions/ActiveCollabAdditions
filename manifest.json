@@ -33,6 +33,7 @@
 				"src/shared.js",
 				"src/utils.js",
 				"src/ui/el.js",
+				"src/ui/overlay.js",
 				"src/ui/style.js",
 				"src/ui/timer.js",
 				"src/ui/dialogs/dialog.js",
