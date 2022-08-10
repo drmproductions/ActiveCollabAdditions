@@ -115,9 +115,6 @@ function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }
 		]))
 	}
 	else {
-		children.push(El('div', { style: buttonStyle }, [
-			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, updatableContext: { projectId, taskId } }),
-		]))
 		if (timerExists) {
 			children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
 				El('span.icon', {
@@ -132,6 +129,9 @@ function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }
 				}),
 			]))
 		}
+		children.push(El('div', { style: buttonStyle }, [
+			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, updatableContext: { projectId, taskId } }),
+		]))
 	}
 
 	return El('div', { style }, children)
