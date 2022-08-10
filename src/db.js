@@ -138,7 +138,7 @@ export function setPreference(key, value) {
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction('preferences', 'readwrite')
 		transaction.oncomplete = () => {
-			bus.emit('setting-updated', { data: { key } })
+			bus.emit('preference-changed', { data: { key } })
 			resolve()
 		}
 		transaction.onerror = reject

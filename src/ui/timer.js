@@ -49,8 +49,9 @@ export function TimerMenuButton(options) {
 	])
 }
 
-export function Timer({ menuButton, menuButtonOptions, updatableContext }) {
+export function Timer({ inert, menuButton, menuButtonOptions, updatableContext = {} }) {
 	async function onClick() {
+		if (inert) return
 		if (updatableContext.disabled) return
 
 		const timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
@@ -120,6 +121,7 @@ export function Timer({ menuButton, menuButtonOptions, updatableContext }) {
 	}
 
 	async function onConnected() {
+		if (inert) return
 		unsub = bus.onMessage(({ kind, data }) => {
 			switch (kind) {
 				case 'tick':
@@ -147,6 +149,7 @@ export function Timer({ menuButton, menuButtonOptions, updatableContext }) {
 	}
 
 	function onDisconnected() {
+		if (inert) return
 		unsub()
 	}
 
@@ -160,33 +163,20 @@ export function Timer({ menuButton, menuButtonOptions, updatableContext }) {
 
 	const innerStyle = {
 		alignItems: 'center',
-		backgroundColor: 'var(--color-primary)',
 		borderRadius: 12,
 		boxSizing: 'border-box',
 		clear: 'none',
-		color: 'var(--page-paper-main)',
 		display: 'flex',
 		fontSize: 12,
 		height: 22.5,
 		justifyContent: 'center',
 		position: 'relative',
 		textAlign: 'center',
-		transition: 'transform .1s ease',
 		userSelect: 'none',
 		width: TIMERS_WITH_SECONDS ? 68 : 48,
-		'.paused': {
-			backgroundColor: '#fab300',
-			// backgroundColor: '#ffc637', // V1 color
-			color: 'white',
-		},
-		'.running': {
-			backgroundColor: '#c71515',
-			// backgroundColor: '#ff3c3c', // V1 color
-			color: 'white',
-		},
 	}
 
-	if (!updatableContext.disabled) {
+	if (!inert && !updatableContext.disabled) {
 		innerStyle.cursor = 'pointer'
 	}
 
@@ -197,7 +187,19 @@ export function Timer({ menuButton, menuButtonOptions, updatableContext }) {
 		innerEl,
 	])
 
-	update()
+	if (inert) {
+		if (typeof inert === 'object') {
+			if (inert.className) {
+				innerEl.classList.add(inert.className)
+			}
+			if (inert.title) {
+				innerEl.title = inert.title
+			}
+		}
+	}
+	else {
+		update()
+	}
 
 	return el
 }
