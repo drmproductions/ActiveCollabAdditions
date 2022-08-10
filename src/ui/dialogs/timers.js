@@ -125,7 +125,7 @@ function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }
 					style: { ...iconStyle, scale: 1.2 },
 				}),
 			]))
-			children.push(El('div', { style: buttonStyle, title: 'Delete', onClick: onClickDelete }, [
+			children.push(El('div', { style: buttonStyle, title: 'Delete...', onClick: onClickDelete }, [
 				El('span.icon', {
 					innerHTML: angie.icons.main_menu_icon_trash,
 					style: { ...iconStyle, scale: 1.05 },
@@ -211,14 +211,14 @@ export function show() {
 	const submitAllButtonEl = DialogHeaderButton({
 		icon: angie.icons.svg_icons_icon_submit_time,
 		iconStyleExtra: { scale: 1.3 },
-		title: 'Submit All',
+		title: 'Submit All...',
 		onClick: onClickSubmit,
 	})
 
 	const deleteAllButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
 		iconStyleExtra: { scale: 1.2 },
-		title: 'Delete All',
+		title: 'Delete All...',
 		onClick: onClickDelete,
 	})
 

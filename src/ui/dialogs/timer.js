@@ -338,7 +338,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 	const deleteButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
 		iconStyleExtra: { scale: 1.2 },
-		title: 'Delete',
+		title: 'Delete...',
 		onClick: onClickDelete,
 	})
 
