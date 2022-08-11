@@ -202,7 +202,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			await db.updateTimer(timer)
 			isBillableEl.disabled = true
 			const res = await cache.getTask({ projectId, taskId })
-			isBillableEl.checked = res.single.is_billable
+			isBillableEl.checked = res.is_billable
 			isBillableEl.disabled = false
 		},
 	}, 'Follow Task')
@@ -326,7 +326,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 		if (timer && typeof timer.isBillable !== 'boolean') {
 			const res = await cache.getTask({ projectId, taskId })
-			isBillableEl.checked = res.single.is_billable
+			isBillableEl.checked = res.is_billable
 		}
 		isBillableEl.disabled = false
 	}

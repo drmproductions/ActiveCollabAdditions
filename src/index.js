@@ -35,7 +35,7 @@ function createMissingTimerElements() {
 
 			if (isNaN(projectId) || isNaN(taskId)) continue
 
-			cache.setTaskName({ projectId, taskId, name: taskNameEl.innerText })
+			cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
 
 			// sometimes this disappears, so it's probably best if we always add it
 			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
@@ -72,6 +72,10 @@ await onUnload(async () => {
 })
 
 onUnload(() => {
+	cache.preload()
+})
+
+onUnload(() => {
 	bus.init()
 	return () => bus.deinit()
 })
@@ -99,6 +103,7 @@ onUnload(() => () => {
 	PreferencesDialog.hide()
 	TimersDialog.hide()
 })
+
 onUnload(async () => {
 	const colors = {
 		default: {

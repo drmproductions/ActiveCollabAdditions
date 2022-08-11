@@ -1,3 +1,7 @@
+export function call(func) {
+	return func()
+}
+
 export function getScrollParent(node) {
 	if (node == null) {
 		return null

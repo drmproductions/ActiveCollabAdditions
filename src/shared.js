@@ -64,7 +64,7 @@ export async function submitTimer({ projectId, taskId }) {
 	let billableStatus = timer.isBillable
 	if (typeof billableStatus !== 'boolean') {
 		const res = await cache.getTask({ projectId, taskId })
-		billableStatus = res.single.is_billable
+		billableStatus = res.is_billable
 	}
 
 	const d = new Date()
