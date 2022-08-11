@@ -19,7 +19,15 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 	},
 })
 
-function createMissingTimerElements() {
+function createMissingTimerElements(mutation) {
+	function check() {
+		if (!mutation) return true
+		const { target } = mutation
+		if (target.querySelector('.task-modal-header')) return true
+		if (target.querySelector('.task_view_mode')) return true
+		return false
+	}
+
 	function variant1() {
 		for (const taskEl of document.body.querySelectorAll('div.task_view_mode')) {
 			const taskNameEl = taskEl.querySelector('.task_name')
@@ -96,8 +104,10 @@ function createMissingTimerElements() {
 		}))
 	}
 
+	if (!check()) return false
 	variant1()
 	variant2()
+	return true
 }
 
 async function onUnload(func) {
@@ -140,11 +150,7 @@ onUnload(() => {
 
 onUnload(() => {
 	const mo = new MutationObserver((mutations) => {
-		mutations.some((mutation) => {
-			if (!mutation.target.querySelector('.task_view_mode')) return
-			createMissingTimerElements()
-			return true
-		})
+		mutations.some(createMissingTimerElements)
 	})
 	mo.observe(document.body, { childList: true, subtree: true })
 	return () => mo.disconnect()
