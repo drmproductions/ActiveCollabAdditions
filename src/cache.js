@@ -1,4 +1,5 @@
 import * as api from './api.js'
+import * as log from './log.js'
 import * as utils from './utils.js'
 
 const cacheLockFuncsMap = new Map()
@@ -33,7 +34,7 @@ export async function getTaskName({ projectId, taskId }) {
 }
 
 export async function preload() {
-	console.time('[cache] preload took')
+	const start = performance.now()
 
 	const promises = []
 	const taskIdSet = new Set()
@@ -53,7 +54,6 @@ export async function preload() {
 		const promises = []
 
 		const projects = await api.getProjects()
-		projectCount = projects.length
 		for (const project of projects) {
 			const projectId = project.id
 			setProject({ projectId }, project)
@@ -66,14 +66,15 @@ export async function preload() {
 				}
 			}))
 		}
+		log.i('cache', `preloaded ${projects.length} projects`)
 
 		await Promise.all(promises)
 	}))
 
 	await Promise.all(promises)
 
-	console.timeEnd('[cache] preload took')
-	console.log(`[cache] preloaded ${projectCount} projects, ${taskIdSet.size} tasks`)
+	log.i('cache', `preloaded ${taskIdSet.size} tasks`)
+	log.i('cache', `preload completed in ${Math.floor(performance.now() - start)} ms`)
 }
 
 function set(key, value) {
@@ -113,7 +114,7 @@ export async function useCache(key, func) {
 				resolve(value)
 			}
 			catch (e) {
-				console.log('failed to resolve cache lock function')
+				log.e('cache', 'failed to resolve cache lock function')
 			}
 		}
 		return value
@@ -124,7 +125,7 @@ export async function useCache(key, func) {
 				reject(e)
 			}
 			catch (e) {
-				console.log('failed to reject cache lock function')
+				log.e('cache', 'failed to reject cache lock function')
 			}
 		}
 		throw e

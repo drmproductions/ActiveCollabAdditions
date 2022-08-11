@@ -3,6 +3,7 @@ import * as TimersDialog from './ui/dialogs/timers.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
+import * as log from './log.js'
 import * as preferences from './preferences.js'
 import { El, getEl } from './ui/el.js'
 import { Timer } from './ui/timer.js'
@@ -339,4 +340,4 @@ onUnload(() => bus.onMessage(({ kind }) => {
 	}
 }))
 
-console.log('ActiveCollabAdditions loaded!')
+log.i('', 'loaded')

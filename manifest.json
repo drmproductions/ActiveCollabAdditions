@@ -29,6 +29,7 @@
 				"src/cache.js",
 				"src/db.js",
 				"src/env.js",
+				"src/log.js",
 				"src/preferences.js",
 				"src/shared.js",
 				"src/utils.js",
