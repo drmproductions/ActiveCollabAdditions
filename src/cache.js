@@ -33,48 +33,83 @@ export async function getTaskName({ projectId, taskId }) {
 	})
 }
 
+function has(key) {
+	return cacheMap.has(key)
+}
+
+export function hasProject({ projectId }) {
+	return has(`project-${projectId}`)
+}
+
+export function hasTask({ projectId, taskId }) {
+	return has(`task-${projectId}-${taskId}`)
+}
+
 export async function preload() {
 	const start = performance.now()
 
 	const promises = []
-	const taskIdSet = new Set()
-	let projectCount = 0
+
+	// preload my tasks
 
 	promises.push(utils.call(async () => {
+		let count = 0
 		const { tasks } = await api.getMyTasks()
 		for (const task of tasks) {
 			const projectId = task.project_id
 			const taskId = task.id
-			taskIdSet.add(`${projectId}-${taskId}`)
+			if (!hasTask({ projectId, taskId }))
+				count++
 			setTask({ projectId, taskId }, task)
 		}
+		if (count > 0) {
+			log.i('cache', `preloaded ${count} of my tasks`)
+		}
 	}))
+
+	// preload my projects and all their tasks
+	// NOTE it's possible this will take very long if a user is part of a lot of projects
+	// TODO we should instead only load the projects we have timers started in
 
 	promises.push(utils.call(async () => {
 		const promises = []
 
+		let count = 0
 		const projects = await api.getProjects()
 		for (const project of projects) {
 			const projectId = project.id
+			if (!hasProject({ projectId }))
+				count++
 			setProject({ projectId }, project)
-			promises.push(utils.call(async () => {
-				const { tasks } = await api.getTasks({ projectId })
-				for (const task of tasks) {
-					const taskId = task.id
-					taskIdSet.add(`${projectId}-${taskId}`)
-					setTask({ projectId, taskId }, task)
-				}
-			}))
+			promises.push(preloadTasks({ projectId }))
 		}
-		log.i('cache', `preloaded ${projects.length} projects`)
+		if (count > 0) {
+			log.i('cache', `preloaded ${count} projects`)
+		}
 
 		await Promise.all(promises)
 	}))
 
 	await Promise.all(promises)
 
-	log.i('cache', `preloaded ${taskIdSet.size} tasks`)
 	log.i('cache', `preload completed in ${Math.floor(performance.now() - start)} ms`)
+}
+
+// TODO tapping a timer in a project should call this and just preload all tasks for that project
+export async function preloadTasks({ projectId }) {
+	await useCache(`tasks-${projectId}`, async () => {
+		let count = 0
+		const { tasks } = await api.getTasks({ projectId })
+		for (const task of tasks) {
+			const taskId = task.id
+			if (!hasTask({ projectId, taskId }))
+				count++
+			setTask({ projectId, taskId }, task)
+		}
+		if (count > 0) {
+			log.i('cache', `preloaded ${count} tasks for project ${projectId}`)
+		}
+	})
 }
 
 function set(key, value) {
