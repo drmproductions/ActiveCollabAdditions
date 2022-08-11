@@ -50,7 +50,7 @@ export function TimerMenuButton(options) {
 	])
 }
 
-export function Timer({ inert, menuButton, menuButtonOptions, updatableContext = {} }) {
+export function Timer({ inert, menuButton, menuButtonOptions, style, updatableContext = {} }) {
 	async function onClick() {
 		if (inert) return
 		if (updatableContext.disabled) return
@@ -155,37 +155,42 @@ export function Timer({ inert, menuButton, menuButtonOptions, updatableContext =
 		unsub()
 	}
 
-	const style = {
-		clear: 'right',
-		cursor: 'default',
-		float: 'left',
-		marginRight: '7px',
-		position: 'relative',
-	}
+	innerEl = El('div.acit-timer-inner', {
+		style: {
+			alignItems: 'center',
+			borderRadius: 12,
+			boxSizing: 'border-box',
+			clear: 'none',
+			cursor: !inert && !updatableContext.disabled ? 'pointer' : '',
+			display: 'flex',
+			fontSize: 12,
+			height: 22.5,
+			justifyContent: 'center',
+			position: 'relative',
+			textAlign: 'center',
+			userSelect: 'none',
+			width: TIMERS_WITH_SECONDS ? 68 : 48,
+		},
+		onClick,
+	}, shared.formatDuration(0))
 
-	const innerStyle = {
-		alignItems: 'center',
-		borderRadius: 12,
-		boxSizing: 'border-box',
-		clear: 'none',
-		display: 'flex',
-		fontSize: 12,
-		height: 22.5,
-		justifyContent: 'center',
-		position: 'relative',
-		textAlign: 'center',
-		userSelect: 'none',
-		width: TIMERS_WITH_SECONDS ? 68 : 48,
-	}
-
-	if (!inert && !updatableContext.disabled) {
-		innerStyle.cursor = 'pointer'
-	}
-
-	innerEl = El('div.acit-timer-inner', { style: innerStyle, onClick }, shared.formatDuration(0))
-
-	const el = El('div.acit-timer', { onConnected, onDisconnected, style }, [
-		menuButton !== false && TimerMenuButton({ updatableContext, style: { marginRight: 8, ...menuButtonOptions?.style }, ...menuButtonOptions }),
+	const el = El('div.acit-timer', {
+		style: {
+			clear: 'right',
+			cursor: 'default',
+			float: 'left',
+			marginRight: '7px',
+			position: 'relative',
+			...style,
+		},
+		onConnected,
+		onDisconnected,
+	}, [
+		menuButton !== false && TimerMenuButton({
+			style: { marginRight: 8, ...menuButtonOptions?.style },
+			updatableContext,
+			...menuButtonOptions,
+		}),
 		innerEl,
 	])
 

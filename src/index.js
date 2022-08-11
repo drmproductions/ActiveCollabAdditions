@@ -25,6 +25,9 @@ function createMissingTimerElements() {
 			const taskNameEl = taskEl.querySelector('.task_name')
 			if (!taskNameEl) continue
 
+			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
+			if (taskEl.querySelector('.acit-timer')) continue
+
 			const { href } = taskNameEl
 			if (!href) continue
 
@@ -38,16 +41,55 @@ function createMissingTimerElements() {
 
 			cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
 
-			// sometimes this disappears, so it's probably best if we always add it
-			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
-
-			if (!taskEl.querySelector('.acit-timer')) {
-				taskEl.prepend(Timer({ updatableContext: { projectId, taskId } }))
-			}
+			taskEl.prepend(Timer({ updatableContext: { projectId, taskId } }))
 		}
 	}
 
+	function variant2() {
+		let el
+
+		const headerEl = document.body.querySelector('h1.task-modal-header')
+		if (!headerEl) return
+
+		const optionsEl = headerEl.parentNode.querySelector('div.task-modal-options')
+		if (!optionsEl) return
+
+		if (optionsEl.querySelector('.acit-timer')) return
+
+		if (!(el = headerEl.querySelector('.task_name'))) return
+		const taskName = el.innerText
+
+		if (!(el = headerEl.parentNode.querySelector('span.task__projectname'))) return
+		if (!(el = el.querySelector('a.project_name_task_modal'))) return
+		const projectName = el.innerText
+
+		let projectId, taskId
+		const matches = document.location.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)
+		if (!matches) {
+			const matches = document.location.pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)
+			if (!matches) return
+			projectId = parseInt(matches[2])
+			taskId = parseInt(matches[5])
+		}
+		else {
+			projectId = parseInt(matches[2])
+			taskId = parseInt(matches[1])
+		}
+
+		if (isNaN(projectId) || isNaN(taskId)) return
+
+		cache.setProjectName({ projectId }, projectName)
+		cache.setTaskName({ projectId, taskId }, taskName)
+
+		optionsEl.prepend(Timer({
+			menuButtonOptions: { alwaysVisible: true },
+			style: { marginTop: 5 },
+			updatableContext: { projectId, taskId },
+		}))
+	}
+
 	variant1()
+	variant2()
 }
 
 async function onUnload(func) {

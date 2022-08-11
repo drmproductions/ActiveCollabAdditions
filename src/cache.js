@@ -133,6 +133,10 @@ export function setProject({ projectId }, value) {
 	set(`project-${projectId}`, value)
 }
 
+export function setProjectName({ projectId }, value) {
+	set(`project-name-${projectId}`, value)
+}
+
 export function setTask({ projectId, taskId }, value) {
 	set(`task-${projectId}-${taskId}`, value)
 }
