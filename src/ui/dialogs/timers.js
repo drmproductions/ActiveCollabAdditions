@@ -248,8 +248,11 @@ export function show() {
 		}
 
 		const updatableContext = { projectId, taskId }
-		const timerEl = Timer({ disabled, menuButton: false, updatableContext })
-		getEl(timerEl).style.marginRight = ''
+		const timerEl = Timer({
+			disabled,
+			menuButton: false,
+			updatableContext,
+		})
 		previousElMap.set(id, { timerEl, updatableContext })
 		return timerEl
 	}

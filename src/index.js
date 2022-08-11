@@ -41,7 +41,12 @@ function createMissingTimerElements() {
 
 			cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
 
-			taskEl.prepend(Timer({ updatableContext: { projectId, taskId } }))
+			taskEl.prepend(Timer({
+				style: {
+					marginRight: 7,
+				},
+				updatableContext: { projectId, taskId },
+			}))
 		}
 	}
 
@@ -83,7 +88,10 @@ function createMissingTimerElements() {
 
 		optionsEl.prepend(Timer({
 			menuButtonOptions: { alwaysVisible: true },
-			style: { marginTop: 5 },
+			style: {
+				marginRight: 7,
+				marginTop: 5,
+			},
 			updatableContext: { projectId, taskId },
 		}))
 	}
@@ -293,14 +301,15 @@ onUnload(async () => {
 	}
 
 	const updatableContext = {}
-	const timerEl = Timer({ menuButtonOptions: { alwaysVisible: true, style: { marginRight: 16 } }, updatableContext })
-	{
-		const el = getEl(timerEl)
-		el.style.marginRight = ''
-		el.style.marginLeft = '8px'
-		el.style.top = '9px'
-		el.style.pointerEvents = 'all'
-	}
+	const timerEl = Timer({
+		menuButtonOptions: { alwaysVisible: true, style: { marginRight: 16 } },
+		style: {
+			marginLeft: 8,
+			pointerEvents: 'all',
+			top: 9,
+		},
+		updatableContext,
+	})
 
 	async function update() {
 		const timers = await db.getTimers()

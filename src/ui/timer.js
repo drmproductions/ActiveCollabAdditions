@@ -179,7 +179,6 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 			clear: 'right',
 			cursor: 'default',
 			float: 'left',
-			marginRight: '7px',
 			position: 'relative',
 			...style,
 		},
