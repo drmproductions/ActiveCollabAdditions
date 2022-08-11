@@ -146,11 +146,6 @@ export function show() {
 
 	const bodyEl = DialogBody()
 	const bodyMessageStyle = {
-		alignItems: 'center',
-		display: 'flex',
-		fontSize: 16,
-		height: 90,
-		justifyContent: 'center',
 	}
 
 	async function onClickDelete() {
@@ -222,7 +217,26 @@ export function show() {
 		onClick: onClickDelete,
 	})
 
+	const messageEl = El('div', {
+		style: {
+			alignItems: 'center',
+			display: 'flex',
+			fontSize: 16,
+			height: 90,
+			justifyContent: 'center',
+		},
+	})
+
 	const previousElMap = new Map()
+
+	function updateMessage(message) {
+		messageEl.innerText = message
+	}
+
+	function showMessage() {
+		getEl(bodyEl).innerHTML = ''
+		getEl(bodyEl).appendChild(messageEl)
+	}
 
 	function createOrUpdateTimerEl(projectId, taskId, disabled) {
 		const id = `${projectId}-${taskId}`
@@ -241,9 +255,10 @@ export function show() {
 	}
 
 	async function update() {
+		updateMessage('Loading...')
+
 		const timeout = setTimeout(() => {
-			getEl(bodyEl).innerHTML = ''
-			getEl(bodyEl).appendChild(El('div', { style: bodyMessageStyle }, 'LOADING...'))
+			showMessage()
 		}, 500)
 
 		const favoriteTasks = await db.getFavoriteTasks()
@@ -255,8 +270,8 @@ export function show() {
 
 		if (favoriteTasks.length === 0 && !hasTimers) {
 			clearTimeout(timeout)
-			getEl(bodyEl).innerHTML = ''
-			getEl(bodyEl).appendChild(El('div', { style: bodyMessageStyle }, 'No timers started'))
+			updateMessage('No timers started')
+			showMessage()
 			return
 		}
 
@@ -271,12 +286,20 @@ export function show() {
 		}
 
 		if (favoriteTasks.length > 0) {
+			for (const { projectId, taskId } of favoriteTasks) {
+				favoriteTasksSet.add(`${projectId}-${taskId}`)
+			}
+		}
+
+		let totalTasksLoaded = 0
+		let totalTasks = favoriteTasks.length + timers.filter(({ projectId, taskId }) => !favoriteTasksSet.has(`${projectId}-${taskId}`)).length
+
+		if (favoriteTasks.length > 0) {
 			const project = { name: 'Favorites', tasks: [] }
 			projects.push(project)
 
 			for (const { projectId, taskId } of favoriteTasks) {
-				favoriteTasksSet.add(`${projectId}-${taskId}`)
-
+				updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
 				const timer = timersMap.get(`${projectId}-${taskId}`)
 				const name = await cache.getTaskName({ projectId, taskId })
 				const submittingState = timer?.submittingState
@@ -300,6 +323,8 @@ export function show() {
 			if (favoriteTasksSet.has(`${projectId}-${taskId}`)) {
 				continue
 			}
+
+			updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
 
 			let project = projectsMap.get(projectId)
 			if (!project) {
