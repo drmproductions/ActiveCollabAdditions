@@ -133,16 +133,6 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 		]))
 	}
 	else {
-		children.push(El('div' + (isFavorite ? '' : `.${unfavoriteTaskClassName}`), {
-			style: buttonStyle,
-			title: isFavorite ? 'Unfavorite' : 'Favorite',
-			onClick: onClickFavorite,
-		}, [
-			El('span.icon', {
-				innerHTML: angie.icons.svg_icons_star,
-				style: { ...iconStyle, scale: 1 },
-			}),
-		]))
 		if (isTimerSubmittable) {
 			children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
 				El('span.icon', {
@@ -157,6 +147,16 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 				}),
 			]))
 		}
+		children.push(El('div' + (isFavorite ? '' : `.${unfavoriteTaskClassName}`), {
+			style: buttonStyle,
+			title: isFavorite ? 'Unfavorite' : 'Favorite',
+			onClick: onClickFavorite,
+		}, [
+			El('span.icon', {
+				innerHTML: angie.icons.svg_icons_star,
+				style: { ...iconStyle, scale: 1 },
+			}),
+		]))
 		children.push(El('div', { style: buttonStyle }, [
 			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, updatableContext: { projectId, taskId } }),
 		]))
