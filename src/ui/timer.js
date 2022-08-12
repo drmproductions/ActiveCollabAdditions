@@ -25,7 +25,7 @@ export function TimerMenuButton(options) {
 		...options.style,
 	}
 
-	async function onClick(e) {
+	async function onClick() {
 		const timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
 		if (timer && timer.running) {
 			timer.duration += Date.now() - timer.started_at
@@ -37,7 +37,7 @@ export function TimerMenuButton(options) {
 			projectId: updatableContext.projectId,
 			taskId: updatableContext.taskId,
 			dialogOptions: {
-				target: e.target,
+				target: this,
 				...options.dialogOptions,
 			},
 		})

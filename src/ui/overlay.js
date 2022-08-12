@@ -1,7 +1,7 @@
 import * as utils from '../utils.js'
 import { El } from './el.js'
 
-function Overlay(id, options, children) {
+function Overlay(id, options = {}, children) {
 	const style = {
 		alignItems: 'center',
 		bottom: 0,
