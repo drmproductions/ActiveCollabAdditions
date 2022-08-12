@@ -109,7 +109,7 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 		const duration = shared.getTimerDuration(timer)
 		innerEl.innerText = shared.formatDuration(duration)
 		innerEl.classList.toggle('running', timer.running)
-		innerEl.classList.toggle('paused', !timer.running)
+		innerEl.classList.toggle('paused', !timer.running && shared.isTimerSubmittable(timer))
 	}
 
 	async function update() {

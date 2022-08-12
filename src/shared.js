@@ -31,6 +31,10 @@ export function getTimerDuration(timer) {
 	return timer.duration + (timer.running ? (Date.now() - timer.started_at) : 0)
 }
 
+export function isTimerSubmittable(timer) {
+	return getTimerDuration(timer) > 0
+}
+
 // returns time in milliseconds
 export function parseTime(time) {
 	const parts = time.split(':')

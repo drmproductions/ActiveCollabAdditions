@@ -28,7 +28,7 @@ function Project({ name, tasks }) {
 	])
 }
 
-function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }, index, timers) {
+function Task({ isTimerSubmittable, name, projectId, submittingState, taskId, timerEl }, index, timers) {
 	const style = {
 		backgroundColor: index % 2 === 0 ? 'var(--color-theme-300)' : 'var(--color-theme-200)',
 		color: 'var(--color-theme-700)',
@@ -115,7 +115,7 @@ function Task({ name, projectId, submittingState, taskId, timerEl, timerExists }
 		]))
 	}
 	else {
-		if (timerExists) {
+		if (isTimerSubmittable) {
 			children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
 				El('span.icon', {
 					innerHTML: angie.icons.svg_icons_icon_submit_time,
@@ -264,10 +264,10 @@ export function show() {
 
 		const favoriteTasks = await db.getFavoriteTasks()
 		const timers = await db.getTimers()
-		const hasTimers = timers.length > 0
+		const hasSubmittableTimer = timers.some(x => shared.isTimerSubmittable(x))
 
-		submitAllButtonEl.style.display = hasTimers ? '' : 'none'
-		deleteAllButtonEl.style.display = hasTimers ? '' : 'none'
+		submitAllButtonEl.style.display = hasSubmittableTimer ? '' : 'none'
+		deleteAllButtonEl.style.display = hasSubmittableTimer ? '' : 'none'
 
 		if (favoriteTasks.length === 0 && !hasTimers) {
 			clearTimeout(timeout)
@@ -308,12 +308,12 @@ export function show() {
 				const timerEl = createOrUpdateTimerEl(projectId, taskId, disabled)
 
 				project.tasks.push({
+					isTimerSubmittable: timer && shared.isTimerSubmittable(timer),
 					name,
 					projectId,
 					submittingState,
 					taskId,
 					timerEl,
-					timerExists: Boolean(timer),
 				})
 			}
 		}
@@ -339,12 +339,12 @@ export function show() {
 			const timerEl = createOrUpdateTimerEl(projectId, taskId, disabled)
 
 			project.tasks.push({
+				isTimerSubmittable: shared.isTimerSubmittable(timer),
 				name,
 				projectId,
 				submittingState,
 				taskId,
 				timerEl,
-				timerExists: true,
 			})
 		}
 

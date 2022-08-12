@@ -277,8 +277,9 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 		const timer = await db.getTimer(projectId, taskId)
 
-		submitButtonEl.style.display = timer ? '' : 'none'
-		deleteButtonEl.style.display = timer ? '' : 'none'
+		const isSubmittable = timer && shared.isTimerSubmittable(timer)
+		submitButtonEl.style.display = isSubmittable ? '' : 'none'
+		deleteButtonEl.style.display = isSubmittable ? '' : 'none'
 
 		if (!timer) return
 
