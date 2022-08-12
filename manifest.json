@@ -33,6 +33,7 @@
 				"src/log.js",
 				"src/preferences.js",
 				"src/shared.js",
+				"src/theme.js",
 				"src/utils.js",
 				"src/ui/style.js",
 				"src/ui/timer.js",

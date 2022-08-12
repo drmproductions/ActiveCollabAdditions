@@ -65,7 +65,7 @@ export async function show() {
 			await preferences.setTimersColorScheme(this.value)
 		},
 	}, [
-		El('option', { value: 'default' }, 'Default'),
+		El('option', { value: 'default' }, 'Theme Accent'),
 		El('option', { value: 'stop-light' }, 'Stop Light'),
 	])
 
@@ -79,8 +79,9 @@ export async function show() {
 			await preferences.setTimersStyle(this.value)
 		},
 	}, [
-		El('option', { value: 'default' }, 'Default'),
+		El('option', { value: 'default' }, 'Filled'),
 		El('option', { value: 'outline' }, 'Outline'),
+		El('option', { value: 'mixed' }, 'Mixed'),
 	])
 
 	const dialogEl = Dialog({ width: 550 }, [

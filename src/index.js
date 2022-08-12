@@ -6,8 +6,8 @@ import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
 import * as log from './log.js'
-import * as preferences from './preferences.js'
 import * as shared from './shared.js'
+import * as theme from './theme.js'
 import { El, getEl } from './ui/el.js'
 import { Timer } from './ui/timer.js'
 import { useStyle } from './ui/style.js'
@@ -249,124 +249,14 @@ onUnload(() => () => {
 })
 
 onUnload(async () => {
-	const colors = {
-		default: {
-			default: {
-				initial: { background: 'var(--color-primary)', text: 'var(--page-paper-main)' },
-				paused: { background: '#fab300', text: 'black' },
-				running: { background: '#c71515', text: 'white' },
-			},
-			outline: {
-				initial: {
-					background: 'var(--border-primary)',
-					text: 'var(--color-theme-900)',
-					hover: {
-						background: 'var(--color-primary)',
-					},
-				},
-				paused: { background: '#ffc637', text: 'var(--color-theme-900)' },
-				running: { background: '#ff3c3c', text: 'var(--color-theme-900)' },
-			},
-		},
-		'stop-light': {
-			default: {
-				initial: { background: '#ff3c3c', text: 'white' },
-				paused: { background: '#ffc637', text: 'black' },
-				running: { background: '#48f311', text: 'black' },
-			},
-			outline: {
-				initial: {
-					background: 'var(--border-primary)',
-					text: 'var(--color-theme-900)',
-					hover: {
-						background: '#ff3c3c',
-					},
-				},
-				paused: { background: '#ffc637', text: 'var(--color-theme-900)' },
-				running: { background: '#48f311', text: 'var(--color-theme-900)' },
-			},
-		},
-	}
-
-	let prevClassName
-
-	async function getStyles() {
-		const style = await preferences.getTimersStyle()
-		const colorScheme = await preferences.getTimersColorScheme()
-		const { initial, paused, running } = colors[colorScheme][style]
-
-		switch (style) {
-			case 'outline':
-				return {
-					borderColor: initial.background,
-					borderStyle: 'solid',
-					borderWidth: 1,
-					color: initial.text,
-					transition: 'border-color ease .3s',
-					':hover': {
-						borderColor: initial.hover?.background ?? initial.background,
-					},
-					'.paused': {
-						borderColor: paused.background,
-						color: paused.text,
-						transition: 'none',
-						':hover': {
-							borderColor: paused.hover?.background ?? paused.background,
-						},
-					},
-					'.running': {
-						borderColor: running.background,
-						color: running.text,
-						transition: 'none',
-						':hover': {
-							borderColor: running.hover?.background ?? running.background,
-						},
-					},
-				}
-			default:
-				return {
-					backgroundColor: initial.background,
-					color: initial.text,
-					':hover': {
-						backgroundColor: initial.hover?.background ?? initial.background,
-					},
-					'.paused': {
-						':hover': {
-							backgroundColor: paused.hover?.background ?? paused.background,
-						},
-						backgroundColor: paused.background,
-						color: paused.text,
-					},
-					'.running': {
-						':hover': {
-							backgroundColor: running.hover?.background ?? running.background,
-						},
-						backgroundColor: running.background,
-						color: running.text,
-					},
-				}
-		}
-	}
-
-	async function update() {
-		const className = useStyle({
-			' .acit-timer-inner': await getStyles(),
-		})
-		document.body.classList.add(className)
-		if (prevClassName) {
-			document.body.classList.remove(prevClassName)
-		}
-		prevClassName = className
-	}
-
-	update()
+	theme.update()
 
 	return bus.onMessage(({ kind, data }) => {
 		switch (kind) {
 			case 'preference-changed':
 				const { key } = data
 				if (key !== 'timersColorScheme' && key !== 'timersStyle') return
-				update(key)
+				theme.update()
 				break
 		}
 	})
