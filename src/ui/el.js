@@ -1,5 +1,12 @@
 import { formatNumberToPixels, useStyle } from './style.js'
 
+const svgTags = [
+	'circle',
+	'g',
+	'path',
+	'svg',
+]
+
 class ElWrapper extends HTMLElement {
 	static initialized = false
 
@@ -39,83 +46,29 @@ function createElement(selector, options, children) {
 
 	const [tag, ...classNames] = selector.split('.')
 
-	let el
-	if (tag === 'svg' || tag === 'path') {
-		el = document.createElementNS('http://www.w3.org/2000/svg', tag)
-	}
-	else {
-		el = document.createElement(tag)
-	}
+	const isSVG = svgTags.includes(tag)
 
-	const isSVG = el instanceof SVGElement
+	let el = isSVG
+		? document.createElementNS('http://www.w3.org/2000/svg', tag)
+		: document.createElement(tag)
 
 	if (classNames) {
 		for (const className of classNames)
 			el.classList.add(className)
 	}
 
-	let topEl = el
 	if (options?.onConnected || options?.onDisconnected) {
 		if (isSVG) {
 			throw new Error(`onConnected and onDisconnected is not supported on SVGElements right now.`)
 		}
 		ElWrapper.initialize()
-		topEl = new ElWrapper(el)
+		el = new ElWrapper(el)
 	}
 
-	if (children) {
-		if (children instanceof Element) {
-			el.appendChild(children)
-		}
-		else if (typeof children === 'string') {
-			el.innerText = children
-		}
-		else if (Array.isArray(children)) {
-			for (const child of children) {
-				if (!child) continue
-				el.appendChild(child)
-			}
-		}
-	}
+	setChildren(el, children)
+	setOptions(el, options)
 
-	if (options) {
-		for (let [k1, v1] of Object.entries(options)) {
-			if (k1.startsWith('on'))
-				k1 = k1.toLowerCase()
-			switch (k1) {
-				case 'onconnected':
-				case 'ondisconnected':
-					topEl[k1] = v1
-					break
-				case 'dataset':
-					for (let [k2, v2] of Object.entries(v1)) {
-						el.dataset[k2] = v2
-					}
-				case 'style':
-					const normalStyles = v1.$
-					if (normalStyles) {
-						delete v1.$
-						for (let [k2, v2] of Object.entries(normalStyles)) {
-							el.style[k2] = formatNumberToPixels(k2, v2)
-						}
-					}
-					el.classList.add(useStyle(v1))
-					if (normalStyles) {
-						v1.$ = normalStyles
-					}
-					break
-				default:
-					if (isSVG) {
-						el.setAttribute(k1, v1)
-					}
-					else {
-						el[k1] = v1
-					}
-			}
-		}
-	}
-
-	return topEl ?? el
+	return el
 }
 
 export function getEl(el) {
@@ -123,6 +76,88 @@ export function getEl(el) {
 		return el.firstChild
 	}
 	return el
+}
+
+export function getElWrapper(el) {
+	if (el instanceof ElWrapper) {
+		return el
+	}
+	el = el.parentNode
+	if (el instanceof ElWrapper) {
+		return el
+	}
+	throw new Error('Passed element is not wrapped in a ElWrapper')
+}
+
+export function setChildren(el, children) {
+	if (!(el instanceof Element)) return
+
+	el = getEl(el)
+	el.innerHTML = ''
+
+	if (!children) return
+
+	if (children instanceof Element) {
+		el.appendChild(children)
+	}
+	else if (typeof children === 'string') {
+		el.innerText = children
+	}
+	else if (Array.isArray(children)) {
+		for (let child of children) {
+			if (!child) continue
+			if (typeof child === 'string') {
+				child = document.createTextNode(child)
+			}
+			el.appendChild(child)
+		}
+	}
+}
+
+export function setOptions(el, options) {
+	if (!(el instanceof Element)) return
+	if (typeof options !== 'object') return
+
+	el = getEl(el)
+
+	const isSVG = el instanceof SVGElement
+
+	for (let [k1, v1] of Object.entries(options)) {
+		if (k1.startsWith('on'))
+			k1 = k1.toLowerCase()
+		switch (k1) {
+			case 'onconnected':
+			case 'ondisconnected':
+				getElWrapper(el)[k1] = v1
+				break
+			case 'dataset':
+				for (let [k2, v2] of Object.entries(v1)) {
+					el.dataset[k2] = v2
+				}
+			case 'style':
+				const normalStyles = v1.$
+				if (normalStyles) {
+					delete v1.$
+					for (let [k2, v2] of Object.entries(normalStyles)) {
+						el.style[k2] = formatNumberToPixels(k2, v2)
+					}
+				}
+				if (Object.keys(v1).length > 0) {
+					el.classList.add(useStyle(v1))
+				}
+				if (normalStyles) {
+					v1.$ = normalStyles
+				}
+				break
+			default:
+				if (isSVG) {
+					el.setAttribute(k1, v1)
+				}
+				else {
+					el[k1] = v1
+				}
+		}
+	}
 }
 
 export function El(selector, options, children) {

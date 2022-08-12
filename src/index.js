@@ -1,5 +1,7 @@
+import * as ListPopup from './ui/popups/list.js'
 import * as PreferencesDialog from './ui/dialogs/preferences.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
+import * as api from './api.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
@@ -20,6 +22,78 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 })
 
 function createMissingElements(mutation) {
+	function getProjectIdAndTaskIdFromDocumentLocation() {
+		let matches, projectId, taskId
+
+		if (matches = document.location.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {
+			projectId = matches[2]
+			taskId = matches[1]
+		}
+		else if (matches = document.location.pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)) {
+			projectId = matches[2]
+			taskId = matches[5]
+		}
+
+		projectId = parseInt(projectId)
+		taskId = parseInt(taskId)
+
+		if (isNaN(projectId)) return
+		if (isNaN(taskId)) return
+
+		return { projectId, taskId }
+	}
+
+	function addChangeProjectMembersButtonToObjectView() {
+		const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
+		if (!propertyEl) return
+		if (propertyEl.querySelector('.acit-add-user-to-project-button')) return
+
+		const ids = getProjectIdAndTaskIdFromDocumentLocation()
+		if (!ids) return
+		const { projectId } = ids
+
+		const el = El('div.acit-add-user-to-project-button', {
+			style: {
+				color: 'var(--color-secondary)',
+				cursor: 'pointer',
+				fontSize: 15,
+				fontWeight: 500,
+				marginTop: 12,
+				minHeight: 22,
+				':hover': {
+					textDecoration: 'underline',
+				},
+			},
+			async onClick() {
+				await ListPopup.show({
+					multi: true,
+					placeholder: 'Filter users...',
+					target: this,
+					async onClick({ id: memberId, checked }) {
+						try {
+							if (checked) {
+								await api.deleteProjectMember({ projectId, memberId })
+							}
+							else {
+								await api.postProjectMember({ projectId, memberId })
+							}
+							return 'toggle'
+						}
+						catch {}
+					},
+					async onUpdate() {
+						const members = await api.getProjectMembers({ projectId })
+						const users = angie.user_session_data.users.filter(x => !x.is_archived)
+						users.sort((a, b) => a.display_name.localeCompare(b.display_name))
+						return users.map(({ id, display_name: text, avatar_url: imageSrc }) =>
+							({ id, text, checked: members.includes(id), imageSrc }))
+					},
+				})
+			},
+		}, 'Change Members...')
+		propertyEl.appendChild(el)
+	}
+
 	function addTaskToTaskModal() {
 		let el
 
@@ -38,20 +112,9 @@ function createMissingElements(mutation) {
 		if (!(el = el.querySelector('a.project_name_task_modal'))) return
 		const projectName = el.innerText
 
-		let projectId, taskId
-		const matches = document.location.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)
-		if (!matches) {
-			const matches = document.location.pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)
-			if (!matches) return
-			projectId = parseInt(matches[2])
-			taskId = parseInt(matches[5])
-		}
-		else {
-			projectId = parseInt(matches[2])
-			taskId = parseInt(matches[1])
-		}
-
-		if (isNaN(projectId) || isNaN(taskId)) return
+		const ids = getProjectIdAndTaskIdFromDocumentLocation()
+		if (!ids) return
+		const { projectId, taskId } = ids
 
 		cache.setProjectName({ projectId }, projectName)
 		cache.setTaskName({ projectId, taskId }, taskName)
@@ -97,6 +160,11 @@ function createMissingElements(mutation) {
 	}
 
 	const target = mutation?.target
+
+	if (!target || target.querySelector('.object_view_sidebar')) {
+		addChangeProjectMembersButtonToObjectView()
+		if (target) return true
+	}
 
 	if (!target || target.querySelector('.task-modal-header')) {
 		addTaskToTaskModal()

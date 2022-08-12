@@ -1,6 +1,6 @@
 import * as utils from '../utils.js'
 
-const numberToPixelsExcludedNames = ['flex-basis', 'flex-grow', 'flex-shrink', 'font-weight', 'opacity', 'scale', 'z-index']
+const numberToPixelsExcludedNames = ['flex-basis', 'flex-grow', 'flex-shrink', 'font-weight', 'line-height', 'opacity', 'scale', 'z-index']
 const styleEl = document.createElement('style')
 const styleMap = new Map()
 

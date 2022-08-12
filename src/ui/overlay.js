@@ -1,24 +1,27 @@
 import * as utils from '../utils.js'
-import { El, getEl } from './el.js'
+import { El } from './el.js'
 
 function Overlay(id, options, children) {
 	const style = {
 		alignItems: 'center',
-		background: 'var(--modal-background)',
 		bottom: 0,
 		display: 'flex',
 		justifyContent: 'center',
 		left: 0,
-		opacity: 0,
 		position: 'fixed',
 		right: 0,
 		top: 0,
-		transition: 'opacity 200ms',
 		zIndex: 10000,
 	}
 
-	if (options?.blur ?? true) {
-		style.backdropFilter = 'blur(2px)'
+	switch (options.variation) {
+		case 'popup':
+			break
+		default:
+			style.backdropFilter = 'blur(2px)'
+			style.background = 'var(--modal-background)'
+			style.opacity = 0
+			style.transition = 'opacity 200ms'
 	}
 
 	return El(`div.acit-overlay.acit-overlay-${id}`, {
@@ -26,6 +29,7 @@ function Overlay(id, options, children) {
 		style,
 		onClick(e) {
 			if (e.target !== this) return
+			options?.onDismiss?.()
 			hide(id)
 		},
 		onConnected(el) {
@@ -97,5 +101,7 @@ export function show(id, options, children) {
 	}
 
 	const overlay = Overlay(id, options, children)
-	document.body.appendChild(overlay)
+
+	const parent = document.body.querySelector('[data-focus-lock-disabled]') ?? document.body
+	parent.appendChild(overlay)
 }
