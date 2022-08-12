@@ -259,6 +259,14 @@ export function show() {
 
 	const previousElMap = new Map()
 
+	// it appears ActiveCollab can be configured to prepend task names with a number
+	// which messes up sorting, so lets try to detect and remove those
+	function getSortName(name) {
+		const matches = name.match(/#([0-9]*): (.*)/)
+		if (matches) return matches[2]
+		return name
+	}
+
 	function updateMessage(message) {
 		messageEl.innerText = message
 	}
@@ -349,6 +357,7 @@ export function show() {
 				isTimerSubmittable: shared.isTimerSubmittable(timer),
 				name,
 				projectId,
+				sortName: getSortName(name),
 				submittingState,
 				taskId,
 				timerEl,
@@ -365,6 +374,7 @@ export function show() {
 				isFavorite: true,
 				name,
 				projectId,
+				sortName: getSortName(name),
 				taskId,
 				timerEl,
 			})
@@ -376,7 +386,7 @@ export function show() {
 		clearTimeout(timeout)
 		bodyEl.innerHTML = ''
 		for (const project of projects) {
-			project.tasks.sort((a, b) => a.name.localeCompare(b.name))
+			project.tasks.sort((a, b) => a.sortName.localeCompare(b.sortName))
 			bodyEl.appendChild(Project(project))
 		}
 	}
