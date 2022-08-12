@@ -1,3 +1,4 @@
+import * as bus from './bus.js'
 import * as preferences from './preferences.js'
 import { useStyle } from './ui/style.js'
 
@@ -143,7 +144,20 @@ async function getStyles() {
 	}
 }
 
-export async function update() {
+export function init() {
+	update()
+	return bus.onMessage(({ kind, data }) => {
+		switch (kind) {
+			case 'preference-changed':
+				const { key } = data
+				if (key !== 'timersColorScheme' && key !== 'timersStyle') return
+				update()
+				break
+		}
+	})
+}
+
+async function update() {
 	const className = useStyle({
 		' .acit-timer-inner': await getStyles(),
 	})

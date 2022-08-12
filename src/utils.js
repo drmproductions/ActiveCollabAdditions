@@ -48,3 +48,13 @@ export function hash(value) {
 	append(value)
 	return chunks.join('')
 }
+
+export function setInterval(func, timeout, ...args) {
+	const id = window.setInterval(func, timeout, ...args)
+	return () => window.clearInterval(id)
+}
+
+export function setTimeout(func, timeout, ...args) {
+	const id = window.setTimeout(func, timeout, ...args)
+	return () => window.clearTimeout(id)
+}

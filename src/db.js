@@ -2,11 +2,6 @@ import * as bus from './bus.js'
 
 let db
 
-export function close() {
-	db.close()
-	db = undefined
-}
-
 export function createFavoriteTask(favoriteTask) {
 	const { projectId, taskId } = favoriteTask
 	return new Promise((resolve, reject) => {
@@ -154,8 +149,8 @@ export function getTimers() {
 	})
 }
 
-export function open() {
-	return new Promise((resolve, reject) => {
+export async function init() {
+	await new Promise((resolve, reject) => {
 		const request = window.indexedDB.open('active-collab-inline-timers', 3)
 		request.onerror = (event) => {
 			reject(event)
@@ -180,6 +175,10 @@ export function open() {
 			resolve()
 		}
 	})
+	return () => {
+		db.close()
+		db = undefined
+	}
 }
 
 export function updateTimer(timer) {

@@ -46,7 +46,7 @@ export function hasTask({ projectId, taskId }) {
 	return has(`task-${projectId}-${taskId}`)
 }
 
-export async function preload() {
+export async function init() {
 	const start = performance.now()
 
 	const promises = []

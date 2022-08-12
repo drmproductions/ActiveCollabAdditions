@@ -6,6 +6,7 @@ import * as db from './db.js'
 import * as eljector from './eljector.js'
 import * as log from './log.js'
 import * as theme from './theme.js'
+import * as utils from './utils.js'
 
 const unloadFuncs = []
 
@@ -18,56 +19,28 @@ async function onUnload(func) {
 }
 
 function unload() {
-	for (const func of unloadFuncs)
+	let func
+	while (func = unloadFuncs.pop()) {
 		func()
-	unloadFuncs.length = 0
+	}
 }
 
 // main
 
-await onUnload(async () => {
-	await db.open()
-	return () => db.close()
-})
+await onUnload(() => db.init())
 
-onUnload(() => {
-	cache.preload()
-})
+onUnload(() => bus.init())
+onUnload(() => cache.init())
+onUnload(() => eljector.init())
+onUnload(() => theme.init())
 
-onUnload(() => {
-	bus.init()
-	return () => bus.deinit()
-})
-
-onUnload(() => {
-	const interval = setInterval(() => {
-		bus.emit('tick', { local: true })
-	}, 1000)
-	return () => clearInterval(interval)
-})
-
-onUnload(() => {
-	eljector.init()
-	return () => eljector.deinit()
-})
+onUnload(() => utils.setInterval(() => {
+	bus.emit('tick', { local: true })
+}, 1000))
 
 onUnload(() => () => {
 	PreferencesDialog.hide()
 	TimersDialog.hide()
-})
-
-onUnload(async () => {
-	theme.update()
-
-	return bus.onMessage(({ kind, data }) => {
-		switch (kind) {
-			case 'preference-changed':
-				const { key } = data
-				if (key !== 'timersColorScheme' && key !== 'timersStyle') return
-				theme.update()
-				break
-		}
-	})
 })
 
 onUnload(() => bus.onMessage(({ kind }) => {

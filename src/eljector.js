@@ -16,27 +16,6 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 	},
 })
 
-let mutationObserver
-let unsub
-
-export function deinit() {
-	if (mutationObserver) {
-		mutationObserver.disconnect()
-		mutationObserver = undefined
-	}
-
-	if (unsub) {
-		unsub()
-		unsub = undefined
-	}
-
-	document.body.querySelectorAll('.acit-top-bar-timer-wrapper')?.remove()
-	document.body.querySelectorAll('.acit-top-bar-timers-button')?.remove()
-	for (const el of document.body.querySelectorAll('.acit-timer')) {
-		getTopEl(el).remove()
-	}
-}
-
 function getFunc(target) {
 	if (target.querySelector('.object_view_sidebar')) return injectChangeProjectMembersButtonIntoObjectView
 	if (target.querySelector('.task_form')) return injectChangeProjectMembersButtonIntoTaskForm
@@ -49,9 +28,9 @@ export function init() {
 	injectChangeProjectMembersButtonIntoTaskForm()
 	injectTaskIntoTaskModal()
 	injectTimersIntoTaskViewTasks()
-	injectTimerIntoTopBar()
+	const unsub = injectTimerIntoTopBar()
 
-	mutationObserver = new MutationObserver((mutations) => {
+	const mutationObserver = new MutationObserver((mutations) => {
 		const funcSet = new Set()
 		for (const { target } of mutations) {
 			const func = getFunc(target)
@@ -62,6 +41,17 @@ export function init() {
 		}
 	})
 	mutationObserver.observe(document.body, { childList: true, subtree: true })
+
+	return () => {
+		mutationObserver.disconnect()
+		unsub?.()
+
+		document.body.querySelectorAll('.acit-top-bar-timer-wrapper')?.remove()
+		document.body.querySelectorAll('.acit-top-bar-timers-button')?.remove()
+		for (const el of document.body.querySelectorAll('.acit-timer')) {
+			getTopEl(el).remove()
+		}
+	}
 }
 
 function injectTimerIntoTopBar() {
@@ -101,17 +91,6 @@ function injectTimerIntoTopBar() {
 		}
 	}
 
-	unsub = bus.onMessage(({ kind, data }) => {
-		switch (kind) {
-			case 'timer-created':
-			case 'timer-deleted':
-			case 'timer-updated':
-			case 'timers-deleted':
-				update()
-				break
-		}
-	})
-
 	update()
 
 	containerEl.prepend(El('li.topbar_item.acit-top-bar-timers-button', {
@@ -137,6 +116,17 @@ function injectTimerIntoTopBar() {
 			width: 'fit-content !important',
 		},
 	}, [timerEl]))
+
+	return bus.onMessage(({ kind, data }) => {
+		switch (kind) {
+			case 'timer-created':
+			case 'timer-deleted':
+			case 'timer-updated':
+			case 'timers-deleted':
+				update()
+				break
+		}
+	})
 }
 
 function injectChangeProjectMembersButtonIntoObjectView() {
