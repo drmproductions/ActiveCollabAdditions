@@ -27,6 +27,20 @@ function unload() {
 
 // main
 
+// sometimes these aren't loaded when we're injected
+await onUnload(async () => {
+	async function wait(key) {
+		while (!angie[key]) {
+			log.w(`waiting for angie.${key}`)
+			await utils.sleep(100)
+		}
+	}
+	await wait('api_url')
+	await wait('collections')
+	await wait('icons')
+	await wait('user_session_data')
+})
+
 await onUnload(() => db.init())
 
 onUnload(() => bus.init())

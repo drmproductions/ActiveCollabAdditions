@@ -58,3 +58,7 @@ export function setTimeout(func, timeout, ...args) {
 	const id = window.setTimeout(func, timeout, ...args)
 	return () => window.clearTimeout(id)
 }
+
+export function sleep(timeout) {
+	return new Promise(r => window.setTimeout(r, timeout))
+}
