@@ -78,7 +78,14 @@ export function getEl(el) {
 	return el
 }
 
-export function getElWrapper(el) {
+export function getTopEl(el) {
+	if (el.parentNode instanceof ElWrapper) {
+		return el.parentNode
+	}
+	return el
+}
+
+export function getWrapperEl(el) {
 	if (el instanceof ElWrapper) {
 		return el
 	}
@@ -128,7 +135,7 @@ export function setOptions(el, options) {
 		switch (k1) {
 			case 'onconnected':
 			case 'ondisconnected':
-				getElWrapper(el)[k1] = v1
+				getWrapperEl(el)[k1] = v1
 				break
 			case 'dataset':
 				for (let [k2, v2] of Object.entries(v1)) {
