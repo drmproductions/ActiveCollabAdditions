@@ -172,29 +172,30 @@ function createMissingElements(mutation) {
 		}
 	}
 
+	let updated = false
 	const target = mutation?.target
 
 	if (!target || target.querySelector('.object_view_sidebar')) {
 		addChangeProjectMembersButtonToObjectView()
-		if (target) return true
+		updated = true
 	}
 
 	if (!target || target.querySelector('.task_form')) {
 		addChangeProjectMembersButtonToTaskForm()
-		if (target) return true
+		updated = true
 	}
 
 	if (!target || target.querySelector('.task-modal-header')) {
 		addTaskToTaskModal()
-		if (target) return true
+		updated = true
 	}
 
 	if (!target || target.querySelector('.task_view_mode')) {
 		addTimersToTaskViewTasks()
-		if (target) return true
+		updated = true
 	}
 
-	return false
+	return updated
 }
 
 async function onUnload(func) {
