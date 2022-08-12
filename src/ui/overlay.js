@@ -28,8 +28,8 @@ function Overlay(id, options, children) {
 			if (e.target !== this) return
 			hide(id)
 		},
-		onConnected() {
-			setTimeout(() => getEl(this).style.opacity = 1, 10)
+		onConnected(el) {
+			setTimeout(() => el.style.opacity = 1, 10)
 		},
 		onContextMenu(e) {
 			if (e.target !== this) return

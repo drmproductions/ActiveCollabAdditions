@@ -6,7 +6,7 @@ import * as db from '../../db.js'
 import * as overlay from '../overlay.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
-import { El, getEl } from '../el.js'
+import { El } from '../el.js'
 import { Timer, TimerMenuButton } from '../timer.js'
 import { useAnimation } from '../style.js'
 
@@ -145,8 +145,6 @@ export function show() {
 	let unsub
 
 	const bodyEl = DialogBody()
-	const bodyMessageStyle = {
-	}
 
 	async function onClickDelete() {
 		const yes = await ConfirmPopup.show({
@@ -234,8 +232,8 @@ export function show() {
 	}
 
 	function showMessage() {
-		getEl(bodyEl).innerHTML = ''
-		getEl(bodyEl).appendChild(messageEl)
+		bodyEl.innerHTML = ''
+		bodyEl.appendChild(messageEl)
 	}
 
 	function createOrUpdateTimerEl(projectId, taskId, disabled) {
@@ -357,10 +355,10 @@ export function show() {
 		}
 
 		clearTimeout(timeout)
-		getEl(bodyEl).innerHTML = ''
+		bodyEl.innerHTML = ''
 		for (const project of projects) {
 			project.tasks.sort((a, b) => a.name.localeCompare(b.name))
-			getEl(bodyEl).appendChild(Project(project))
+			bodyEl.appendChild(Project(project))
 		}
 	}
 
