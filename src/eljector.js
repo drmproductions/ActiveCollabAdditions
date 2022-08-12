@@ -16,11 +16,11 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 	},
 })
 
-function getFunc(target) {
-	if (target.querySelector('.object_view_sidebar')) return injectChangeProjectMembersButtonIntoObjectView
-	if (target.querySelector('.task_form')) return injectChangeProjectMembersButtonIntoTaskForm
-	if (target.querySelector('.task-modal-header')) return injectTaskIntoTaskModal
-	if (target.querySelector('.task_view_mode')) return injectTimersIntoTaskViewTasks
+function addFuncs(funcSet, target) {
+	if (target.querySelector('.object_view_sidebar')) funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
+	if (target.querySelector('.task_form')) funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
+	if (target.querySelector('.task-modal-header')) funcSet.add(injectTaskIntoTaskModal)
+	if (target.querySelector('.task_view_mode')) funcSet.add(injectTimersIntoTaskViewTasks)
 }
 
 export function init() {
@@ -33,8 +33,7 @@ export function init() {
 	const mutationObserver = new MutationObserver((mutations) => {
 		const funcSet = new Set()
 		for (const { target } of mutations) {
-			const func = getFunc(target)
-			if (func) funcSet.add(func)
+			addFuncs(funcSet, target)
 		}
 		for (const func of funcSet.values()) {
 			func()
