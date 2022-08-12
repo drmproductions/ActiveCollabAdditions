@@ -273,7 +273,9 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	async function update(stillUpdateTimeIfRunning) {
 		const favoriteTask = await db.getFavoriteTask(projectId, taskId)
-		favoritedButtonEl.classList.toggle(unfavoriteTaskClassName, !Boolean(favoriteTask))
+		const isFavorite = Boolean(favoriteTask)
+		favoritedButtonEl.classList.toggle(unfavoriteTaskClassName, !isFavorite)
+		favoritedButtonEl.title = isFavorite ? 'Unfavorite' : 'Favorite'
 
 		const timer = await db.getTimer(projectId, taskId)
 
@@ -338,21 +340,21 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	const deleteButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
-		iconStyleExtra: { scale: 1.2 },
+		iconStyle: { scale: 1.2 },
 		title: 'Clear...',
 		onClick: onClickClear,
 	})
 
 	const favoritedButtonEl = DialogHeaderButton({
 		icon: angie.icons.svg_icons_star,
-		iconStyleExtra: { scale: 1.1 },
+		iconStyle: { scale: 1.1 },
 		title: 'Favorite',
 		onClick: onClickFavorite,
 	})
 
 	const submitButtonEl = DialogHeaderButton({
 		icon: angie.icons.svg_icons_icon_submit_time,
-		iconStyleExtra: { scale: 1.3 },
+		iconStyle: { scale: 1.3 },
 		title: 'Submit',
 		onClick: onClickSubmit,
 	})
@@ -366,7 +368,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			deleteButtonEl,
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
-				iconStyleExtra: { scale: 1.7 },
+				iconStyle: { scale: 1.7 },
 				title: 'Close',
 				onClick: () => hide(),
 			}),

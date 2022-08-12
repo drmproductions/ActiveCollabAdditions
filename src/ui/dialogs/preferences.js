@@ -87,7 +87,7 @@ export async function show() {
 		DialogHeader('Preferences', [
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
-				iconStyleExtra: { scale: 1.7 },
+				iconStyle: { scale: 1.7 },
 				title: 'Close',
 				onClick: () => hide(),
 			}),

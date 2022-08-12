@@ -8,11 +8,19 @@ import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
 import { Timer, TimerMenuButton } from '../timer.js'
-import { useAnimation } from '../style.js'
+import { useAnimation, useStyle } from '../style.js'
 
 const rotateAnimation = useAnimation({
 	0: { transform: 'rotate(0) scaleX(-1)' },
 	100: { transform: 'rotate(360deg) scaleX(-1)' },
+})
+
+const unfavoriteTaskClassName = useStyle({
+	' path': {
+		fill: 'none',
+		stroke: 'var(--color-theme-600)',
+		strokeWidth: 2,
+	},
 })
 
 function Project({ name, tasks }) {
@@ -28,7 +36,7 @@ function Project({ name, tasks }) {
 	])
 }
 
-function Task({ isTimerSubmittable, name, projectId, submittingState, taskId, timerEl }, index, timers) {
+function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState, taskId, timerEl }, index, timers) {
 	const style = {
 		backgroundColor: index % 2 === 0 ? 'var(--color-theme-300)' : 'var(--color-theme-200)',
 		color: 'var(--color-theme-700)',
@@ -81,6 +89,16 @@ function Task({ isTimerSubmittable, name, projectId, submittingState, taskId, ti
 		await db.deleteTimer(projectId, taskId)
 	}
 
+	async function onClickFavorite() {
+		const favoriteTask = await db.getFavoriteTask(projectId, taskId)
+		if (favoriteTask) {
+			await db.deleteFavoriteTask(projectId, taskId)
+		}
+		else {
+			await db.createFavoriteTask({ projectId, taskId })
+		}
+	}
+
 	async function onClickSubmit() {
 		await shared.submitTimer({ projectId, taskId })
 	}
@@ -115,6 +133,16 @@ function Task({ isTimerSubmittable, name, projectId, submittingState, taskId, ti
 		]))
 	}
 	else {
+		children.push(El('div' + (isFavorite ? '' : `.${unfavoriteTaskClassName}`), {
+			style: buttonStyle,
+			title: isFavorite ? 'Unfavorite' : 'Favorite',
+			onClick: onClickFavorite,
+		}, [
+			El('span.icon', {
+				innerHTML: angie.icons.svg_icons_star,
+				style: { ...iconStyle, scale: 1 },
+			}),
+		]))
 		if (isTimerSubmittable) {
 			children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
 				El('span.icon', {
@@ -203,15 +231,17 @@ export function show() {
 
 	const submitAllButtonEl = DialogHeaderButton({
 		icon: angie.icons.svg_icons_icon_submit_time,
-		iconStyleExtra: { scale: 1.3 },
+		iconStyle: { scale: 1.3 },
 		title: 'Submit All...',
+		style: { $: { display: 'none' } },
 		onClick: onClickSubmitAll,
 	})
 
 	const deleteAllButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
-		iconStyleExtra: { scale: 1.2 },
+		iconStyle: { scale: 1.2 },
 		title: 'Clear All...',
+		style: { $: { display: 'none' } },
 		onClick: onClickClearAll,
 	})
 
@@ -269,76 +299,48 @@ export function show() {
 		submitAllButtonEl.style.display = hasSubmittableTimer ? '' : 'none'
 		deleteAllButtonEl.style.display = hasSubmittableTimer ? '' : 'none'
 
-		if (favoriteTasks.length === 0 && !hasTimers) {
+		if (favoriteTasks.length === 0 && timers.length === 0) {
 			clearTimeout(timeout)
 			updateMessage('No timers started')
 			showMessage()
 			return
 		}
 
-		const projects = []
-		const favoriteTasksSet = new Set()
+
+		// merge timers and
+
 		const projectsMap = new Map()
-		const timersMap = new Map()
-
-		for (const timer of timers) {
-			const { projectId, taskId } = timer
-			timersMap.set(`${projectId}-${taskId}`, timer)
+		for (const { projectId } of timers.concat(favoriteTasks)) {
+			if (projectsMap.has(projectId)) continue
+			const name = await cache.getProjectName({ projectId })
+			projectsMap.set(projectId, { name, tasks: [] })
 		}
 
-		if (favoriteTasks.length > 0) {
-			for (const { projectId, taskId } of favoriteTasks) {
-				favoriteTasksSet.add(`${projectId}-${taskId}`)
-			}
+		const timersSet = new Set()
+		for (const { projectId, taskId } of timers) {
+			timersSet.add(`${projectId}-${taskId}`)
 		}
+
+		const favoriteTasksSet = new Set()
+		for (const { projectId, taskId } of favoriteTasks) {
+			favoriteTasksSet.add(`${projectId}-${taskId}`)
+		}
+
+		const favoriteTasksWithoutTimer = favoriteTasks.filter(({ projectId, taskId }) => !timersSet.has(`${projectId}-${taskId}`))
 
 		let totalTasksLoaded = 0
-		let totalTasks = favoriteTasks.length + timers.filter(({ projectId, taskId }) => !favoriteTasksSet.has(`${projectId}-${taskId}`)).length
-
-		if (favoriteTasks.length > 0) {
-			const project = { name: 'Favorites', tasks: [] }
-			projects.push(project)
-
-			for (const { projectId, taskId } of favoriteTasks) {
-				updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
-				const timer = timersMap.get(`${projectId}-${taskId}`)
-				const name = await cache.getTaskName({ projectId, taskId })
-				const submittingState = timer?.submittingState
-				const disabled = Boolean(submittingState)
-				const timerEl = createOrUpdateTimerEl(projectId, taskId, disabled)
-
-				project.tasks.push({
-					isTimerSubmittable: timer && shared.isTimerSubmittable(timer),
-					name,
-					projectId,
-					submittingState,
-					taskId,
-					timerEl,
-				})
-			}
-		}
+		const totalTasks = timers.length + favoriteTasksWithoutTimer.length
 
 		for (const timer of timers) {
-			const { projectId, submittingState, taskId } = timer
-
-			if (favoriteTasksSet.has(`${projectId}-${taskId}`)) {
-				continue
-			}
-
 			updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
 
-			let project = projectsMap.get(projectId)
-			if (!project) {
-				const name = await cache.getProjectName({ projectId })
-				project = { name, tasks: [] }
-				projectsMap.set(projectId, project)
-			}
-
+			const { projectId, submittingState, taskId } = timer
 			const name = await cache.getTaskName({ projectId, taskId })
 			const disabled = Boolean(submittingState)
 			const timerEl = createOrUpdateTimerEl(projectId, taskId, disabled)
 
-			project.tasks.push({
+			projectsMap.get(projectId).tasks.push({
+				isFavorite: favoriteTasksSet.has(`${projectId}-${taskId}`),
 				isTimerSubmittable: shared.isTimerSubmittable(timer),
 				name,
 				projectId,
@@ -348,11 +350,23 @@ export function show() {
 			})
 		}
 
-		const projectsWithTimers = Array.from(projectsMap.values())
-		projectsWithTimers.sort((a, b) => a.name.localeCompare(b.name))
-		for (const project of projectsWithTimers) {
-			projects.push(project)
+		for (const { projectId, taskId } of favoriteTasksWithoutTimer) {
+			updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
+
+			const name = await cache.getTaskName({ projectId, taskId })
+			const timerEl = createOrUpdateTimerEl(projectId, taskId, false)
+
+			projectsMap.get(projectId).tasks.push({
+				isFavorite: true,
+				name,
+				projectId,
+				taskId,
+				timerEl,
+			})
 		}
+
+		const projects = Array.from(projectsMap.values())
+		projects.sort((a, b) => a.name.localeCompare(b.name))
 
 		clearTimeout(timeout)
 		bodyEl.innerHTML = ''
@@ -366,7 +380,7 @@ export function show() {
 		DialogHeader('Timers', [
 			DialogHeaderButton({
 				icon: angie.icons.main_menu_icon_system_settings,
-				iconStyleExtra: { scale: 1.3 },
+				iconStyle: { scale: 1.3 },
 				title: 'Preferences',
 				onClick: onClickShowPreferences,
 			}),
@@ -374,7 +388,7 @@ export function show() {
 			deleteAllButtonEl,
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,
-				iconStyleExtra: { scale: 1.7 },
+				iconStyle: { scale: 1.7 },
 				title: 'Close',
 				onClick: () => hide(),
 			}),

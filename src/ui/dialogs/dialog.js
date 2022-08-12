@@ -67,35 +67,37 @@ export function DialogHeader(title, buttons) {
 	])
 }
 
-export function DialogHeaderButton({ icon, iconStyleExtra = {}, title, onClick }) {
-	const style = {
-		alignItems: 'center',
-		cursor: 'pointer',
-		display: 'flex',
-		flexShrink: 0,
-		justifyContent: 'center',
-		width: '66px',
-		':hover': {
-			' .icon': {
-				transform: 'scale(1.2)',
+export function DialogHeaderButton({ icon, iconStyle, style, title, onClick }) {
+	return El('div', {
+		style: {
+			alignItems: 'center',
+			cursor: 'pointer',
+			display: 'flex',
+			flexShrink: 0,
+			justifyContent: 'center',
+			width: '66px',
+			':hover': {
+				' .icon': {
+					transform: 'scale(1.2)',
+				},
 			},
+			...style,
 		},
-	}
-
-	const iconStyle = {
-		alignItems: 'center',
-		display: 'flex !important',
-		fill: 'var(--color-theme-900)',
-		justifyContent: 'center',
-		transform: 'scale(1)',
-		transformOrigin: 'center',
-		transition: 'transform .1s ease',
-	}
-
-	return El('div', { style, title, onClick }, [
+		title,
+		onClick,
+	}, [
 		El('span.icon', {
 			innerHTML: icon,
-			style: { ...iconStyle, ...iconStyleExtra },
+			style: {
+				alignItems: 'center',
+				display: 'flex !important',
+				fill: 'var(--color-theme-900)',
+				justifyContent: 'center',
+				transform: 'scale(1)',
+				transformOrigin: 'center',
+				transition: 'transform .1s ease',
+				...iconStyle,
+			},
 		}),
 	])
 }
