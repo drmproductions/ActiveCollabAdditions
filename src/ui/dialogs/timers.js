@@ -72,9 +72,9 @@ function Task({ isTimerSubmittable, name, projectId, submittingState, taskId, ti
 		await db.updateTimer(timer)
 	}
 
-	async function onClickDelete() {
+	async function onClickClear() {
 		const yes = await ConfirmPopup.show({
-			message: 'Delete Timer?',
+			message: 'Clear Timer?',
 			target: this.firstChild,
 		})
 		if (!yes) return
@@ -122,7 +122,7 @@ function Task({ isTimerSubmittable, name, projectId, submittingState, taskId, ti
 					style: { ...iconStyle, scale: 1.2 },
 				}),
 			]))
-			children.push(El('div', { style: buttonStyle, title: 'Delete...', onClick: onClickDelete }, [
+			children.push(El('div', { style: buttonStyle, title: 'Clear...', onClick: onClickClear }, [
 				El('span.icon', {
 					innerHTML: angie.icons.main_menu_icon_trash,
 					style: { ...iconStyle, scale: 1.05 },
@@ -146,16 +146,16 @@ export function show() {
 
 	const bodyEl = DialogBody()
 
-	async function onClickDelete() {
+	async function onClickClearAll() {
 		const yes = await ConfirmPopup.show({
-			message: 'Delete All Timers?',
+			message: 'Clear All Timers?',
 			target: this.firstChild,
 		})
 		if (!yes) return
 		await db.deleteTimers()
 	}
 
-	async function onClickSubmit() {
+	async function onClickSubmitAll() {
 		const yes = await ConfirmPopup.show({
 			message: 'Submit All Timers?',
 			target: this.firstChild,
@@ -205,14 +205,14 @@ export function show() {
 		icon: angie.icons.svg_icons_icon_submit_time,
 		iconStyleExtra: { scale: 1.3 },
 		title: 'Submit All...',
-		onClick: onClickSubmit,
+		onClick: onClickSubmitAll,
 	})
 
 	const deleteAllButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
 		iconStyleExtra: { scale: 1.2 },
-		title: 'Delete All...',
-		onClick: onClickDelete,
+		title: 'Clear All...',
+		onClick: onClickClearAll,
 	})
 
 	const messageEl = El('div', {

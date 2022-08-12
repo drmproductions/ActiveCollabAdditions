@@ -246,9 +246,9 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	let unsub
 
-	async function onClickDelete() {
+	async function onClickClear() {
 		const yes = await ConfirmPopup.show({
-			message: 'Delete Timer?',
+			message: 'Clear Timer?',
 			target: deleteButtonEl.firstChild,
 		})
 		if (!yes) return
@@ -339,8 +339,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 	const deleteButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
 		iconStyleExtra: { scale: 1.2 },
-		title: 'Delete...',
-		onClick: onClickDelete,
+		title: 'Clear...',
+		onClick: onClickClear,
 	})
 
 	const favoritedButtonEl = DialogHeaderButton({
