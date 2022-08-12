@@ -192,6 +192,8 @@ export function show() {
 		const items = []
 		for (const timer of await db.getTimers()) {
 			const { projectId, taskId } = timer
+			const duration = shared.getTimerDuration(timer)
+			if (duration === 0) continue
 			const name = await cache.getTaskName({ projectId, taskId })
 			items.push({ projectId, taskId, name })
 			timer.submittingState = 'queued'
@@ -306,32 +308,35 @@ export function show() {
 			return
 		}
 
+		// don't show timers that haven't been started unless they're favorited
+		const favoriteTasksSet = new Set()
+		for (const { projectId, taskId } of favoriteTasks) {
+			favoriteTasksSet.add(`${projectId}-${taskId}`)
+		}
+		const filteredTimers = timers.filter((timer) => {
+			return favoriteTasksSet.has(`${timer.projectId}-${timer.taskId}`) || shared.getTimerDuration(timer) > 0
+		})
 
-		// merge timers and
+		// don't show timers twice
+		const timersSet = new Set()
+		for (const { projectId, taskId } of filteredTimers) {
+			timersSet.add(`${projectId}-${taskId}`)
+		}
+		const filteredFavoriteTasks = favoriteTasks.filter(({ projectId, taskId }) => {
+			return !timersSet.has(`${projectId}-${taskId}`)
+		})
 
 		const projectsMap = new Map()
-		for (const { projectId } of timers.concat(favoriteTasks)) {
+		for (const { projectId } of filteredTimers.concat(filteredFavoriteTasks)) {
 			if (projectsMap.has(projectId)) continue
 			const name = await cache.getProjectName({ projectId })
 			projectsMap.set(projectId, { name, tasks: [] })
 		}
 
-		const timersSet = new Set()
-		for (const { projectId, taskId } of timers) {
-			timersSet.add(`${projectId}-${taskId}`)
-		}
-
-		const favoriteTasksSet = new Set()
-		for (const { projectId, taskId } of favoriteTasks) {
-			favoriteTasksSet.add(`${projectId}-${taskId}`)
-		}
-
-		const favoriteTasksWithoutTimer = favoriteTasks.filter(({ projectId, taskId }) => !timersSet.has(`${projectId}-${taskId}`))
-
 		let totalTasksLoaded = 0
-		const totalTasks = timers.length + favoriteTasksWithoutTimer.length
+		const totalTasks = filteredTimers.length + filteredFavoriteTasks.length
 
-		for (const timer of timers) {
+		for (const timer of filteredTimers) {
 			updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
 
 			const { projectId, submittingState, taskId } = timer
@@ -350,7 +355,7 @@ export function show() {
 			})
 		}
 
-		for (const { projectId, taskId } of favoriteTasksWithoutTimer) {
+		for (const { projectId, taskId } of filteredFavoriteTasks) {
 			updateMessage(`Loading task ${++totalTasksLoaded}/${totalTasks}...`)
 
 			const name = await cache.getTaskName({ projectId, taskId })
