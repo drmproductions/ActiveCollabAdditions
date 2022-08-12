@@ -108,7 +108,6 @@ export async function init() {
 	log.i('cache', `preload completed in ${Math.floor(performance.now() - start)} ms`)
 }
 
-// TODO tapping a timer in a project should call this and just preload all tasks for that project
 export async function preloadTasks({ projectId }) {
 	await useCache(`tasks-${projectId}`, async () => {
 		let count = 0

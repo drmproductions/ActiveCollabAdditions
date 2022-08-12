@@ -14,7 +14,6 @@ export function TimerMenuButton(options) {
 		float: 'left',
 		height: 24,
 		opacity: options.alwaysVisible ? 1 : 0,
-		// transition: 'ease .3s opacity',
 		width: 24,
 		':hover': {
 			backgroundColor: 'var(--color-theme-300)',

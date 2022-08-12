@@ -50,7 +50,6 @@ export function DialogBody(options = {}, children) {
 
 export function DialogHeader(title, buttons) {
 	const style = {
-		// backgroundColor: 'var(--color-theme-400)',
 		display: 'flex',
 	}
 
