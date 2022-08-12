@@ -19,46 +19,8 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 	},
 })
 
-function createMissingTimerElements(mutation) {
-	function check() {
-		if (!mutation) return true
-		const { target } = mutation
-		if (target.querySelector('.task-modal-header')) return true
-		if (target.querySelector('.task_view_mode')) return true
-		return false
-	}
-
-	function variant1() {
-		for (const taskEl of document.body.querySelectorAll('div.task_view_mode')) {
-			const taskNameEl = taskEl.querySelector('.task_name')
-			if (!taskNameEl) continue
-
-			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
-			if (taskEl.querySelector('.acit-timer')) continue
-
-			const { href } = taskNameEl
-			if (!href) continue
-
-			const matches = new URL(href).pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)
-			if (!matches) continue
-
-			const projectId = parseInt(matches[2])
-			const taskId = parseInt(matches[5])
-
-			if (isNaN(projectId) || isNaN(taskId)) continue
-
-			cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
-
-			taskEl.prepend(Timer({
-				style: {
-					marginRight: 7,
-				},
-				updatableContext: { projectId, taskId },
-			}))
-		}
-	}
-
-	function variant2() {
+function createMissingElements(mutation) {
+	function addTaskToTaskModal() {
 		let el
 
 		const headerEl = document.body.querySelector('h1.task-modal-header')
@@ -104,10 +66,49 @@ function createMissingTimerElements(mutation) {
 		}))
 	}
 
-	if (!check()) return false
-	variant1()
-	variant2()
-	return true
+	function addTimersToTaskViewTasks() {
+		for (const taskEl of document.body.querySelectorAll('div.task_view_mode')) {
+			const taskNameEl = taskEl.querySelector('.task_name')
+			if (!taskNameEl) continue
+
+			taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
+			if (taskEl.querySelector('.acit-timer')) continue
+
+			const { href } = taskNameEl
+			if (!href) continue
+
+			const matches = new URL(href).pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)
+			if (!matches) continue
+
+			const projectId = parseInt(matches[2])
+			const taskId = parseInt(matches[5])
+
+			if (isNaN(projectId) || isNaN(taskId)) continue
+
+			cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
+
+			taskEl.prepend(Timer({
+				style: {
+					marginRight: 7,
+				},
+				updatableContext: { projectId, taskId },
+			}))
+		}
+	}
+
+	const target = mutation?.target
+
+	if (!target || target.querySelector('.task-modal-header')) {
+		addTaskToTaskModal()
+		if (target) return true
+	}
+
+	if (!target || target.querySelector('.task_view_mode')) {
+		addTimersToTaskViewTasks()
+		if (target) return true
+	}
+
+	return false
 }
 
 async function onUnload(func) {
@@ -150,7 +151,7 @@ onUnload(() => {
 
 onUnload(() => {
 	const mo = new MutationObserver((mutations) => {
-		mutations.some(createMissingTimerElements)
+		mutations.some(createMissingElements)
 	})
 	mo.observe(document.body, { childList: true, subtree: true })
 	return () => mo.disconnect()
@@ -377,7 +378,7 @@ onUnload(async () => {
 })
 
 onUnload(() => {
-	createMissingTimerElements()
+	createMissingElements()
 
 	return () => {
 		const els = document.body.querySelectorAll('.acit-timer')
