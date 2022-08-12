@@ -405,7 +405,8 @@ onUnload(async () => {
 	})
 
 	async function update() {
-		const timers = await db.getTimers()
+		let timers = await db.getTimers()
+		timers = timers.filter((timer) => shared.getTimerDuration(timer) > 0)
 		timers.sort((a, b) => b.started_at - a.started_at)
 
 		const timer = timers.find(timer => timer.running) || timers[0]
