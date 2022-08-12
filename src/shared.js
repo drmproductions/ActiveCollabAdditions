@@ -26,6 +26,48 @@ export function formatDuration(duration = 0, separator = ':', includeSeconds = T
 	return parts.join(separator)
 }
 
+export function getProjectIdFromDocumentLocation() {
+	const { location: url } = document
+
+	let matches, projectId
+
+	if (matches = url.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {
+		projectId = matches[2]
+	}
+	else if (matches = url.pathname.match(/(projects\/)([0-9]*)/)) {
+		projectId = matches[2]
+	}
+
+	projectId = parseInt(projectId)
+
+	if (isNaN(projectId)) return
+
+	return { projectId }
+}
+
+export function getProjectIdAndTaskIdFromDocumentLocation() {
+	const { location: url } = document
+
+	let matches, projectId, taskId
+
+	if (matches = url.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {
+		projectId = matches[2]
+		taskId = matches[1]
+	}
+	else if (matches = url.pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)) {
+		projectId = matches[2]
+		taskId = matches[5]
+	}
+
+	projectId = parseInt(projectId)
+	taskId = parseInt(taskId)
+
+	if (isNaN(projectId)) return
+	if (isNaN(taskId)) return
+
+	return { projectId, taskId }
+}
+
 export function getTimerDuration(timer) {
 	if (!timer) return 0
 	return timer.duration + (timer.running ? (Date.now() - timer.started_at) : 0)

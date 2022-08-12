@@ -7,6 +7,7 @@ import * as cache from './cache.js'
 import * as db from './db.js'
 import * as log from './log.js'
 import * as preferences from './preferences.js'
+import * as shared from './shared.js'
 import { El, getEl } from './ui/el.js'
 import { Timer } from './ui/timer.js'
 import { useStyle } from './ui/style.js'
@@ -22,37 +23,8 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 })
 
 function createMissingElements(mutation) {
-	function getProjectIdAndTaskIdFromDocumentLocation() {
-		let matches, projectId, taskId
-
-		if (matches = document.location.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {
-			projectId = matches[2]
-			taskId = matches[1]
-		}
-		else if (matches = document.location.pathname.match(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)/)) {
-			projectId = matches[2]
-			taskId = matches[5]
-		}
-
-		projectId = parseInt(projectId)
-		taskId = parseInt(taskId)
-
-		if (isNaN(projectId)) return
-		if (isNaN(taskId)) return
-
-		return { projectId, taskId }
-	}
-
-	function addChangeProjectMembersButtonToObjectView() {
-		const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
-		if (!propertyEl) return
-		if (propertyEl.querySelector('.acit-add-user-to-project-button')) return
-
-		const ids = getProjectIdAndTaskIdFromDocumentLocation()
-		if (!ids) return
-		const { projectId } = ids
-
-		const el = El('div.acit-add-user-to-project-button', {
+	function ChangeProjectMembersButton({ id, projectId, style }) {
+		return El(`div.${id}`, {
 			style: {
 				color: 'var(--color-secondary)',
 				cursor: 'pointer',
@@ -63,6 +35,7 @@ function createMissingElements(mutation) {
 				':hover': {
 					textDecoration: 'underline',
 				},
+				...style,
 			},
 			async onClick() {
 				await ListPopup.show({
@@ -91,7 +64,47 @@ function createMissingElements(mutation) {
 				})
 			},
 		}, 'Change Members...')
-		propertyEl.appendChild(el)
+	}
+
+	function addChangeProjectMembersButtonToObjectView() {
+		const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
+		if (!propertyEl) return
+
+		const id = 'acit-change-project-members-button-modal'
+		if (propertyEl.querySelector(`.${id}`)) return
+
+		const ids = shared.getProjectIdFromDocumentLocation()
+		if (!ids) return
+		const { projectId } = ids
+
+		const buttonEl = ChangeProjectMembersButton({id, projectId })
+		propertyEl.appendChild(buttonEl)
+	}
+
+	function addChangeProjectMembersButtonToTaskForm() {
+		const wrapperEl = document.body.querySelector('div.project_tasks_add_wrapper')
+		if (!wrapperEl) return
+
+		const id = 'acit-change-project-members-button-inline'
+		if (wrapperEl.querySelector(`.${id}`)) return
+
+		const siblingEl = document.body.querySelector('div.select_assignee_new_popover')
+		if (!siblingEl) return
+
+		const ids = shared.getProjectIdFromDocumentLocation()
+		if (!ids) return
+		const { projectId } = ids
+
+		const buttonEl = ChangeProjectMembersButton({
+			id,
+			projectId,
+			style: {
+				fontSize: 13,
+				fontWeight: 'inherit',
+				textDecoration: 'underline',
+			},
+		})
+		siblingEl.parentNode.appendChild(buttonEl)
 	}
 
 	function addTaskToTaskModal() {
@@ -112,7 +125,7 @@ function createMissingElements(mutation) {
 		if (!(el = el.querySelector('a.project_name_task_modal'))) return
 		const projectName = el.innerText
 
-		const ids = getProjectIdAndTaskIdFromDocumentLocation()
+		const ids = shared.getProjectIdAndTaskIdFromDocumentLocation()
 		if (!ids) return
 		const { projectId, taskId } = ids
 
@@ -163,6 +176,11 @@ function createMissingElements(mutation) {
 
 	if (!target || target.querySelector('.object_view_sidebar')) {
 		addChangeProjectMembersButtonToObjectView()
+		if (target) return true
+	}
+
+	if (!target || target.querySelector('.task_form')) {
+		addChangeProjectMembersButtonToTaskForm()
 		if (target) return true
 	}
 
