@@ -8,7 +8,7 @@ import * as log from './log.js'
 import * as shared from './shared.js'
 import * as theme from './theme.js'
 import { El, getEl } from './ui/el.js'
-import { Timer } from './ui/timer.js'
+import { Timer } from './ui/Timer.js'
 
 const unloadFuncs = []
 

@@ -1,6 +1,6 @@
 import * as cache from './cache.js'
 import { ChangeProjectMembersButton } from './ui/ChangeProjectMembersButton.js'
-import { Timer } from './ui/timer.js'
+import { Timer } from './ui/Timer.js'
 import { getTopEl } from './ui/el.js'
 import { useStyle } from './ui/style.js'
 

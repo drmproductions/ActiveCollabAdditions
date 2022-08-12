@@ -7,7 +7,7 @@ import * as overlay from '../overlay.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
-import { Timer, TimerMenuButton } from '../timer.js'
+import { Timer, TimerMenuButton } from '../Timer.js'
 import { useAnimation, useStyle } from '../style.js'
 
 const rotateAnimation = useAnimation({

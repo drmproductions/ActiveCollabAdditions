@@ -38,7 +38,7 @@
 				"src/utils.js",
 				"src/ui/style.js",
 				"src/ui/ChangeProjectMembersButton.js",
-				"src/ui/timer.js",
+				"src/ui/Timer.js",
 				"src/ui/el.js",
 				"src/ui/overlay.js",
 				"src/ui/dialogs/dialog.js",

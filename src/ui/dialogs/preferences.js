@@ -2,7 +2,7 @@ import * as overlay from '../overlay.js'
 import * as preferences from '../../preferences.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
-import { Timer } from '../timer.js'
+import { Timer } from '../Timer.js'
 
 export function hide() {
 	overlay.hide('preferences')
