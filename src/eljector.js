@@ -1,7 +1,11 @@
+import * as TimersDialog from './ui/dialogs/timers.js'
+import * as bus from './bus.js'
 import * as cache from './cache.js'
+import * as db from './db.js'
+import * as shared from './shared.js'
 import { ChangeProjectMembersButton } from './ui/ChangeProjectMembersButton.js'
+import { El, getEl, getTopEl } from './ui/el.js'
 import { Timer } from './ui/Timer.js'
-import { getTopEl } from './ui/el.js'
 import { useStyle } from './ui/style.js'
 
 const showTimerWhenHoveringOverTaskClassName = useStyle({
@@ -13,13 +17,22 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 })
 
 let mutationObserver
+let unsub
 
 export function deinit() {
-	mutationObserver.disconnect()
-	mutationObserver = undefined
+	if (mutationObserver) {
+		mutationObserver.disconnect()
+		mutationObserver = undefined
+	}
 
-	const els = document.body.querySelectorAll('.acit-timer')
-	for (const el of els) {
+	if (unsub) {
+		unsub()
+		unsub = undefined
+	}
+
+	document.body.querySelectorAll('.acit-top-bar-timer-wrapper')?.remove()
+	document.body.querySelectorAll('.acit-top-bar-timers-button')?.remove()
+	for (const el of document.body.querySelectorAll('.acit-timer')) {
 		getTopEl(el).remove()
 	}
 }
@@ -36,6 +49,7 @@ export function init() {
 	injectChangeProjectMembersButtonIntoTaskForm()
 	injectTaskIntoTaskModal()
 	injectTimersIntoTaskViewTasks()
+	injectTimerIntoTopBar()
 
 	mutationObserver = new MutationObserver((mutations) => {
 		const funcSet = new Set()
@@ -48,6 +62,81 @@ export function init() {
 		}
 	})
 	mutationObserver.observe(document.body, { childList: true, subtree: true })
+}
+
+function injectTimerIntoTopBar() {
+	const containerEl = document.querySelector('.topbar_items')
+	if (!containerEl) return
+
+	const updatableContext = {}
+
+	const timerEl = Timer({
+		menuButtonOptions: { alwaysVisible: true, style: { marginRight: 16 } },
+		style: {
+			marginLeft: 8,
+			pointerEvents: 'all',
+			top: 9,
+		},
+		updatableContext,
+	})
+
+	async function update() {
+		let timers = await db.getTimers()
+		timers = timers.filter((timer) => shared.getTimerDuration(timer) > 0)
+		timers.sort((a, b) => b.started_at - a.started_at)
+
+		const timer = timers.find(timer => timer.running) || timers[0]
+
+		const projectId = timer?.projectId
+		const taskId = timer?.taskId
+
+		if (updatableContext.projectId !== projectId || updatableContext.taskId !== taskId) {
+			updatableContext?.onUpdate({ projectId, taskId })
+
+			if (timer) {
+				const projectName = await cache.getProjectName({ projectId })
+				const taskName = await cache.getTaskName({ projectId: timer.projectId, taskId: timer.taskId })
+				getEl(timerEl).title = `${projectName} - ${taskName}`
+			}
+		}
+	}
+
+	unsub = bus.onMessage(({ kind, data }) => {
+		switch (kind) {
+			case 'timer-created':
+			case 'timer-deleted':
+			case 'timer-updated':
+			case 'timers-deleted':
+				update()
+				break
+		}
+	})
+
+	update()
+
+	containerEl.prepend(El('li.topbar_item.acit-top-bar-timers-button', {
+		onClick() {
+			TimersDialog.show()
+		},
+	}, [
+		El('button.btn', [
+			El('span.icon', {
+				innerHTML: angie.icons.svg_icons_time_tracker_icon,
+				style: {
+					alignItems: 'center',
+					display: 'flex !important',
+					justifyContent: 'center',
+				},
+			}),
+		]),
+	]))
+
+	containerEl.prepend(El('li.topbar_item.acit-top-bar-timer-wrapper', {
+		style: {
+			margin: 0,
+			width: 'fit-content !important',
+		},
+	}, [timerEl]))
 }
 
 function injectChangeProjectMembersButtonIntoObjectView() {

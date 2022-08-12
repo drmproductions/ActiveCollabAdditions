@@ -5,10 +5,7 @@ import * as cache from './cache.js'
 import * as db from './db.js'
 import * as eljector from './eljector.js'
 import * as log from './log.js'
-import * as shared from './shared.js'
 import * as theme from './theme.js'
-import { El, getEl } from './ui/el.js'
-import { Timer } from './ui/Timer.js'
 
 const unloadFuncs = []
 
@@ -71,98 +68,6 @@ onUnload(async () => {
 				break
 		}
 	})
-})
-
-onUnload(async () => {
-	const containerEl = document.querySelector('.topbar_items')
-	if (!containerEl) return
-
-	function onClick() {
-		TimersDialog.show()
-	}
-
-	// TODO only do this in development mode
-	function onContextMenu(e) {
-		e.preventDefault()
-		// TODO not supported with new ESM structure
-		// bus.emit('hot-reload')
-	}
-
-	const iconStyle = {
-		alignItems: 'center',
-		display: 'flex !important',
-		justifyContent: 'center',
-	}
-
-	const updatableContext = {}
-	const timerEl = Timer({
-		menuButtonOptions: { alwaysVisible: true, style: { marginRight: 16 } },
-		style: {
-			marginLeft: 8,
-			pointerEvents: 'all',
-			top: 9,
-		},
-		updatableContext,
-	})
-
-	async function update() {
-		let timers = await db.getTimers()
-		timers = timers.filter((timer) => shared.getTimerDuration(timer) > 0)
-		timers.sort((a, b) => b.started_at - a.started_at)
-
-		const timer = timers.find(timer => timer.running) || timers[0]
-
-		const projectId = timer?.projectId
-		const taskId = timer?.taskId
-
-		if (updatableContext.projectId !== projectId || updatableContext.taskId !== taskId) {
-			updatableContext?.onUpdate({ projectId, taskId })
-
-			if (timer) {
-				const projectName = await cache.getProjectName({ projectId })
-				const taskName = await cache.getTaskName({ projectId: timer.projectId, taskId: timer.taskId })
-				getEl(timerEl).title = `${projectName} - ${taskName}`
-			}
-		}
-	}
-
-	const unsub = bus.onMessage(({ kind, data }) => {
-		switch (kind) {
-			case 'timer-created':
-			case 'timer-deleted':
-			case 'timer-updated':
-			case 'timers-deleted':
-				update()
-				break
-		}
-	})
-
-	update()
-
-	const el = El('li.topbar_item', { onClick, onContextMenu }, [
-		El('button.btn', [
-			El('span.icon', {
-				innerHTML: angie.icons.svg_icons_time_tracker_icon,
-				style: iconStyle,
-			}),
-		]),
-	])
-
-	const timerWrapperEl = El('li.topbar_item', {
-		style: {
-			margin: 0,
-			width: 'fit-content !important',
-		},
-	}, [timerEl])
-
-	containerEl.prepend(el)
-	containerEl.prepend(timerWrapperEl)
-
-	return () => {
-		unsub()
-		el.remove()
-		timerWrapperEl.remove()
-	}
 })
 
 onUnload(() => bus.onMessage(({ kind }) => {
