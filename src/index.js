@@ -1,5 +1,6 @@
 import * as PreferencesDialog from './ui/dialogs/preferences.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
+import * as buildinfo from './buildinfo.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
@@ -25,47 +26,36 @@ function unload() {
 	}
 }
 
-// main
-
-// sometimes these aren't loaded when we're injected
-await onUnload(async () => {
-	async function wait(key) {
-		while (!angie[key]) {
-			log.w(`waiting for angie.${key}`)
-			await utils.sleep(100)
+utils.call(async () => {
+	// sometimes these aren't loaded when we're injected
+	await onUnload(async () => {
+		async function wait(key) {
+			while (!angie[key]) {
+				log.w(`waiting for angie.${key}`)
+				await utils.sleep(100)
+			}
 		}
-	}
-	await wait('api_url')
-	await wait('collections')
-	await wait('icons')
-	await wait('user_session_data')
+		await wait('api_url')
+		await wait('collections')
+		await wait('icons')
+		await wait('user_session_data')
+	})
+
+	await onUnload(() => db.init())
+
+	onUnload(() => bus.init())
+	onUnload(() => cache.init())
+	onUnload(() => eljector.init())
+	onUnload(() => theme.init())
+
+	onUnload(() => utils.setInterval(() => {
+		bus.emit('tick', { local: true })
+	}, 1000))
+
+	onUnload(() => () => {
+		PreferencesDialog.hide()
+		TimersDialog.hide()
+	})
+
+	log.i('', `Version ${buildinfo.VERSION} loaded`)
 })
-
-await onUnload(() => db.init())
-
-onUnload(() => bus.init())
-onUnload(() => cache.init())
-onUnload(() => eljector.init())
-onUnload(() => theme.init())
-
-onUnload(() => utils.setInterval(() => {
-	bus.emit('tick', { local: true })
-}, 1000))
-
-onUnload(() => () => {
-	PreferencesDialog.hide()
-	TimersDialog.hide()
-})
-
-onUnload(() => bus.onMessage(({ kind }) => {
-	switch (kind) {
-		case 'hot-reload':
-			setTimeout(() => {
-				unload()
-				window.postMessage('acit-hot-reload', '*')
-			}, 100)
-			break
-	}
-}))
-
-log.i('', 'loaded')
