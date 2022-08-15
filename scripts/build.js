@@ -32,6 +32,7 @@ async function build() {
 	}
 }
 
+// TODO add hot reload support using websockets
 function watch() {
 	const isChromiumBuilt = fs.existsSync('out/chromium/current')
 	const isFirefoxBuilt = fs.existsSync('out/firefox/current')

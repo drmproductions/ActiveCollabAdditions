@@ -9,6 +9,7 @@ if (!['chromium', 'firefox'].includes(target)) {
 
 const version = fs.readFileSync('www/version').toString()
 const outDir = `${process.cwd()}/out/${target}/current`
+const zipPath = `${process.cwd()}/out/${target}/${version}.zip`
 const iconFilenames = fs.readdirSync(`www/icons`).filter(x => x.endsWith('.png'))
 
 execSync(`rm -rf ${outDir}`)
@@ -64,3 +65,5 @@ switch (target) {
 }
 
 fs.writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest))
+
+execSync(`cd ${outDir} && zip -r ${zipPath} *`)

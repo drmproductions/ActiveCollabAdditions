@@ -2,6 +2,7 @@
 
 docker build -q -t activecollab-additions-node -<<EOF
 FROM node:17-alpine3.14
+RUN apk add zip
 RUN npm install -g npm@8.5.0
 RUN cd /opt; npm install chokidar esbuild
 WORKDIR /opt/workdir
