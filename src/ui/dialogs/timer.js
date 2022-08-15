@@ -18,47 +18,74 @@ const unfavoriteTaskClassName = useStyle({
 })
 
 class TimeInputHistoryStack {
-	constructor(inputEl) {
+	constructor(el) {
 		this._backwardsStack = []
+		this._el = el
 		this._forwardsStack = []
-		this._inputEl = inputEl
 	}
 
-	_get() {
-		return {
-			selectionEnd: this._inputEl.selectionEnd,
-			selectionStart: this._inputEl.selectionStart,
-			value: this._inputEl.value,
-		}
+	get() {
+		const range = document.getSelection().getRangeAt(0).cloneRange()
+		const end = Math.max(range.startOffset, range.endOffset)
+		const start = Math.min(range.startOffset, range.endOffset)
+		const value = this._el.innerText
+		return { end, start, value }
 	}
 
-	_set({ selectionEnd, selectionStart, value }) {
-		this._inputEl.value = value
-		this._inputEl.selectionStart = selectionStart
-		this._inputEl.selectionEnd = selectionEnd
-		this._inputEl.dispatchEvent(new Event('change'))
-		// console.log(this._backwardsStack.map(i => i.value), value, this._forwardsStack.map(i => i.value).reverse())
+	paste() {
+		const { value } = this.get()
+
+		const range = document.createRange()
+		range.setStart(this._el.firstChild, 0)
+		range.setEnd(this._el.firstChild, value.length)
+
+		const selection = document.getSelection()
+		selection.removeAllRanges()
+		selection.addRange(range)
+
+		setTimeout(() => this._el.onchange(), 10)
 	}
 
 	popBackwards() {
 		if (this._backwardsStack.length === 0) return
-		this._forwardsStack.push(this._get())
-		this._set(this._backwardsStack.pop())
+		this._forwardsStack.push(this.get())
+		this.set(this._backwardsStack.pop())
 	}
 
 	popForwards() {
 		if (this._forwardsStack.length === 0) return
-		this._backwardsStack.push(this._get())
-		this._set(this._forwardsStack.pop())
+		this._backwardsStack.push(this.get())
+		this.set(this._forwardsStack.pop())
 	}
 
-	push(value, selectionStart, selectionEnd) {
+	push(value, start, end) {
 		this._forwardsStack.length = 0
-		this._backwardsStack.push(this._get())
-		this._set({ selectionEnd, selectionStart, value })
+		this._backwardsStack.push(this.get())
+		this.set({ end, start, value })
+	}
+
+	set({ end, start, value }) {
+		const changed = this._el.innerText !== value
+
+		if (changed) {
+			this._el.innerText = value
+		}
+
+		const range = document.createRange()
+		range.setStart(this._el.firstChild, start)
+		range.setEnd(this._el.firstChild, end)
+
+		const selection = document.getSelection()
+		if (this._el.contains(selection.anchorNode)) {
+			selection.removeAllRanges()
+			selection.addRange(range)
+		}
+
+		if (changed) {
+			this._el.onchange()
+		}
 	}
 }
-
 
 async function createOrUpdateTimer(projectId, taskId, updates) {
 	const timer = await db.getTimer(projectId, taskId)
@@ -83,52 +110,67 @@ export function hide() {
 export async function show({ projectId, taskId, dialogOptions }) {
 	const overlayOptions = dialogOptions?.overlayOptions
 
-	let timeElUndoRedoStateMachine
+	let timeInputHistoryStack
 
-	const timeEl = El('input', {
+	const timeEl = El('div', {
+		contentEditable: true,
 		style: {
+			border: '1px solid var(--border-primary)',
+			borderRadius: 10,
 			boxSizing: 'border-box',
+			color: 'var(--color-theme-900)',
+			fontSize: 14,
 			height: '32px !important',
-			paddingTop: '8px !important',
+			padding: '4px 10px 6px 8px',
 			paddingRight: '8px !important',
-			width: (shared.formatDuration(0).length === 5 ? 60 : 82) + 'px !important',
+			paddingTop: '8px !important',
 			textAlign: 'center',
+			transition: 'all .3s ease',
+			width: 'fit-content',
+			':hover': {
+				borderColor: 'var(--color-primary)',
+				outline: 'none',
+			},
+			':focus': {
+				borderColor: 'var(--color-primary)',
+				outline: 'none',
+			},
 		},
-		type: 'text',
-		value: shared.formatDuration(0),
 		async onChange() {
+			const state = timeInputHistoryStack.get()
 			try {
 				await createOrUpdateTimer(projectId, taskId, {
-					duration: shared.parseTime(this.value),
+					duration: shared.parseTime(state.value),
 					started_at: Date.now(),
 				})
 			}
 			catch (e) {
 				const timer = await db.getTimer(projectId, taskId)
-				this.value = shared.formatDuration(timer ? shared.getTimerDuration(timer) : 0)
+				const value = shared.formatDuration(timer ? shared.getTimerDuration(timer) : 0)
+				timeInputHistoryStack.set({ ...state, value })
 			}
 		},
 		async onKeyDown(e) {
+			let { start, end, value } = timeInputHistoryStack.get()
+
 			if (e.ctrlKey) {
 				if (e.key === 'a') {
 					return
 				}
 				if (e.key === 'c') {
-					navigator.clipboard.writeText(this.value)
+					navigator.clipboard.writeText(start === end ? value : value.slice(start, end))
 					return
 				}
 				if (e.key === 'v') {
-					this.selectionStart = 0
-					this.selectionEnd = this.value.length
-					setTimeout(() => this.dispatchEvent(new Event('change')), 10)
+					timeInputHistoryStack.paste()
 					return
 				}
 				if (e.key === 'z') {
-					timeElUndoRedoStateMachine.popBackwards()
+					timeInputHistoryStack.popBackwards()
 					return
 				}
 				if (e.key === 'Z') {
-					timeElUndoRedoStateMachine.popForwards()
+					timeInputHistoryStack.popForwards()
 					return
 				}
 			}
@@ -139,9 +181,6 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			e.preventDefault()
 
 			if (e.key === 'Backspace') {
-				let start = this.selectionStart
-				let end = this.selectionEnd
-				let { value } = this
 				if (start !== end) {
 					const chars = []
 					for (let i = 0; i < value.length; i++) {
@@ -154,13 +193,13 @@ export async function show({ projectId, taskId, dialogOptions }) {
 						}
 					}
 					value = chars.join('')
-					timeElUndoRedoStateMachine.push(value, start, end)
+					timeInputHistoryStack.push(value, start, end)
 					return
 				}
 				if (value[start - 1] === ':') start--
 				if (start <= 0) return
 				value = value.slice(0, start - 1) + '0' + value.slice(start)
-				timeElUndoRedoStateMachine.push(value, start - 1, start - 1)
+				timeInputHistoryStack.push(value, start - 1, start - 1)
 				return
 			}
 
@@ -169,12 +208,10 @@ export async function show({ projectId, taskId, dialogOptions }) {
 				return
 			}
 
-			let start = this.selectionStart
-			if (start === this.value.length) {
+			if (start === value.length) {
 				start--
 			}
 
-			let { value } = this
 			if (value[start] === ':') {
 				start++
 			}
@@ -185,10 +222,10 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 			value = value.slice(0, start) + digit + value.slice(start + 1)
 			start = start + 1 + (value[start + 1] === ':' ? 1 : 0)
-			timeElUndoRedoStateMachine.push(value, start, start)
+			timeInputHistoryStack.push(value, start, start)
 		},
-	})
-	timeElUndoRedoStateMachine = new TimeInputHistoryStack(timeEl)
+	}, shared.formatDuration(0))
+	timeInputHistoryStack = new TimeInputHistoryStack(timeEl)
 
 	const descriptionEl = El('textarea', {
 		style: { padding: 8, resize: 'vertical', transition: 'none', width: '100%' },
@@ -308,7 +345,9 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		if (!timer) return
 
 		if (!timer.running || stillUpdateTimeIfRunning) {
-			timeEl.value = shared.formatDuration(shared.getTimerDuration(timer))
+			const state = timeInputHistoryStack.get()
+			const value = shared.formatDuration(shared.getTimerDuration(timer))
+			timeInputHistoryStack.set({ ...state, value })
 		}
 
 		if (typeof timer.description === 'string') {
