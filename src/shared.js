@@ -82,6 +82,29 @@ export function isCurrentUserOwner() {
 	return getCurrentUser()?.class === 'Owner'
 }
 
+export async function isTimerInDefaultState(timer) {
+	if (timer.jobTypeId !== undefined) {
+		const defaultJobTypeId = await preferences.getTimersDefaultJobType()
+		if (timer.jobTypeId !== defaultJobTypeId) {
+			return false
+		}
+	}
+
+	if (timer.description) {
+		return false
+	}
+
+	if (timer.isBillable !== undefined) {
+		return false
+	}
+
+	if (getTimerDuration(timer) > 0) {
+		return false
+	}
+
+	return true
+}
+
 export function isTimerSubmittable(timer) {
 	return getTimerDuration(timer) > 0
 }

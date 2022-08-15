@@ -95,19 +95,28 @@ class TimeInputHistoryStack {
 }
 
 async function createOrUpdateTimer(projectId, taskId, updates) {
-	const timer = await db.getTimer(projectId, taskId)
+	let timer = await db.getTimer(projectId, taskId)
 	if (timer) {
-		await db.updateTimer({ ...timer, ...updates })
+		timer = { ...timer, ...updates }
+		if (await shared.isTimerInDefaultState(timer)) {
+			await db.deleteTimer(projectId, taskId)
+			return
+		}
+		await db.updateTimer(timer)
 		return
 	}
-	await db.createTimer({
+	timer = {
 		duration: 0,
 		projectId: projectId,
 		running: false,
 		started_at: Date.now(),
 		taskId: taskId,
 		...updates,
-	})
+	}
+	if (await shared.isTimerInDefaultState(timer)) {
+		return
+	}
+	await db.createTimer(timer)
 }
 
 export function hide() {
@@ -265,11 +274,13 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		async onClick() {
 			const timer = await db.getTimer(projectId, taskId)
 			delete timer.isBillable
-			await db.updateTimer(timer)
-			isBillableEl.disabled = true
-			const res = await cache.getTask({ projectId, taskId })
-			isBillableEl.checked = res.is_billable
-			isBillableEl.disabled = false
+
+			if (await shared.isTimerInDefaultState(timer)) {
+				await db.deleteTimer(projectId, taskId)
+			}
+			else {
+				await db.updateTimer(timer)
+			}
 		},
 	}, 'Follow Task')
 
@@ -280,8 +291,25 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		},
 		value: await preferences.getTimersDefaultJobType(),
 		async onChange() {
+			const value = parseInt(this.value)
+			const defaultValue = await preferences.getTimersDefaultJobType()
+
+			if (value === defaultValue) {
+				const timer = await db.getTimer(projectId, taskId)
+				if (timer) {
+					delete timer.jobTypeId
+					if (await shared.isTimerInDefaultState(timer)) {
+						await db.deleteTimer(projectId, taskId)
+					}
+					else {
+						await db.updateTimer(timer)
+					}
+				}
+				return
+			}
+
 			await createOrUpdateTimer(projectId, taskId, {
-				jobTypeId: parseInt(this.value),
+				jobTypeId: value,
 			})
 		},
 	}, angie.collections.job_types.map(({ id, name }) => {
@@ -349,29 +377,28 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		submitButtonEl.style.display = isSubmittable ? '' : 'none'
 		deleteButtonEl.style.display = isSubmittable ? '' : 'none'
 
-		if (!timer) return
-
-		if (!timer.running || stillUpdateTimeIfRunning) {
+		if (timer && (!timer.running || stillUpdateTimeIfRunning)) {
 			const state = timeInputHistoryStack.get()
 			const value = shared.formatDuration(shared.getTimerDuration(timer))
 			timeInputHistoryStack.set({ ...state, value })
 		}
 
-		if (typeof timer.description === 'string') {
-			descriptionEl.value = timer.description
-		}
+		descriptionEl.value = (timer && typeof timer.description === 'string') ? timer.description : ''
 
-		if (typeof timer.isBillable === 'boolean') {
-			isBillableEl.checked = timer.isBillable
+		if (timer && typeof timer.isBillable === 'boolean') {
 			followTaskIsBillableEl.style.display = ''
+			isBillableEl.checked = timer.isBillable
 		}
 		else {
 			followTaskIsBillableEl.style.display = 'none'
+			const res = await cache.getTask({ projectId, taskId })
+			isBillableEl.checked = res.is_billable
+			isBillableEl.disabled = false
 		}
 
-		if (typeof timer.jobTypeId === 'number') {
-			jobTypeEl.value = timer.jobTypeId
-		}
+		jobTypeEl.value = (timer && typeof timer.jobTypeId === 'number')
+			? timer.jobTypeId
+			: await preferences.getTimersDefaultJobType()
 
 		return timer
 	}
@@ -384,22 +411,16 @@ export async function show({ projectId, taskId, dialogOptions }) {
 				case 'timer-created':
 				case 'timer-deleted':
 				case 'timer-updated':
-				case 'timers-deleted':
 					if (data.projectId !== projectId) break
 					if (data.taskId !== taskId) break
+					update()
+				case 'timers-deleted':
 					update()
 					break
 			}
 		})
-		const timer = update(true)
-
+		update(true)
 		descriptionEl.focus()
-
-		if (timer && typeof timer.isBillable !== 'boolean') {
-			const res = await cache.getTask({ projectId, taskId })
-			isBillableEl.checked = res.is_billable
-		}
-		isBillableEl.disabled = false
 	}
 
 	function onDisconnected() {
