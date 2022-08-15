@@ -371,7 +371,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		hide()
 	}
 
-	async function update(stillUpdateTimeIfRunning) {
+	async function update(forceUpdateTimeEl) {
 		const favoriteTask = await db.getFavoriteTask(projectId, taskId)
 		const isFavorite = Boolean(favoriteTask)
 		favoritedButtonEl.classList.toggle(unfavoriteTaskClassName, !isFavorite)
@@ -383,28 +383,53 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		submitButtonEl.style.display = isSubmittable ? '' : 'none'
 		deleteButtonEl.style.display = isSubmittable ? '' : 'none'
 
-		if (timer && (!timer.running || stillUpdateTimeIfRunning)) {
+		if (forceUpdateTimeEl || !timer || !timer.running) {
 			const state = timeInputHistoryStack.get()
 			const value = shared.formatDuration(shared.getTimerDuration(timer))
 			timeInputHistoryStack.set({ ...state, value })
 		}
 
-		descriptionEl.value = (timer && typeof timer.description === 'string') ? timer.description : ''
-
-		if (timer && typeof timer.isBillable === 'boolean') {
-			followTaskIsBillableEl.style.display = ''
-			isBillableEl.checked = timer.isBillable
-		}
-		else {
-			followTaskIsBillableEl.style.display = 'none'
-			const res = await cache.getTask({ projectId, taskId })
-			isBillableEl.checked = res.is_billable
-			isBillableEl.disabled = false
+		{
+			const value = (timer && typeof timer.description === 'string') ? timer.description : ''
+			if (value !== descriptionEl.value) {
+				descriptionEl.value = value
+			}
 		}
 
-		jobTypeEl.value = (timer && typeof timer.jobTypeId === 'number')
-			? timer.jobTypeId
-			: await preferences.getTimersDefaultJobType()
+		{
+			let value
+			let followTaskStyleDisplay
+			if (timer && typeof timer.isBillable === 'boolean') {
+				followTaskStyleDisplay = ''
+				value = timer.isBillable
+			}
+			else {
+				followTaskStyleDisplay = 'none'
+				const res = await cache.getTask({ projectId, taskId })
+				value = res.is_billable
+			}
+
+			if (followTaskStyleDisplay !== followTaskIsBillableEl.style.display) {
+				followTaskIsBillableEl.style.display = followTaskStyleDisplay
+			}
+
+			if (value !== isBillableEl.checked) {
+				isBillableEl.checked = value
+			}
+
+			if (isBillableEl.disabled) {
+				isBillableEl.disabled = false
+			}
+		}
+
+		{
+			const value = (timer && typeof timer.jobTypeId === 'number')
+				? timer.jobTypeId
+				: await preferences.getTimersDefaultJobType()
+			if (value !== parseInt(jobTypeEl.value)) {
+				jobTypeEl.value = value
+			}
+		}
 
 		return timer
 	}
