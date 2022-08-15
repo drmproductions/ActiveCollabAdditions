@@ -26,14 +26,16 @@ class TimeInputHistoryStack {
 
 	_get() {
 		return {
-			selectionIndex: this._inputEl.selectionStart,
+			selectionEnd: this._inputEl.selectionEnd,
+			selectionStart: this._inputEl.selectionStart,
 			value: this._inputEl.value,
 		}
 	}
 
-	_set({ selectionIndex, value }) {
+	_set({ selectionEnd, selectionStart, value }) {
 		this._inputEl.value = value
-		this._inputEl.selectionStart = this._inputEl.selectionEnd = selectionIndex
+		this._inputEl.selectionStart = selectionStart
+		this._inputEl.selectionEnd = selectionEnd
 		this._inputEl.dispatchEvent(new Event('change'))
 		// console.log(this._backwardsStack.map(i => i.value), value, this._forwardsStack.map(i => i.value).reverse())
 	}
@@ -50,10 +52,10 @@ class TimeInputHistoryStack {
 		this._set(this._forwardsStack.pop())
 	}
 
-	push(value, selectionIndex) {
+	push(value, selectionStart, selectionEnd) {
 		this._forwardsStack.length = 0
 		this._backwardsStack.push(this._get())
-		this._set({ selectionIndex, value })
+		this._set({ selectionEnd, selectionStart, value })
 	}
 }
 
@@ -107,6 +109,9 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		},
 		async onKeyDown(e) {
 			if (e.ctrlKey) {
+				if (e.key === 'a') {
+					return
+				}
 				if (e.key === 'c') {
 					navigator.clipboard.writeText(this.value)
 					return
@@ -134,11 +139,27 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 			if (e.key === 'Backspace') {
 				let start = this.selectionStart
+				let end = this.selectionEnd
 				let { value } = this
+				if (start !== end) {
+					const chars = []
+					for (let i = 0; i < value.length; i++) {
+						const char = value[i]
+						if (char !== ':' && i >= start && i < end) {
+							chars.push('0')
+						}
+						else {
+							chars.push(char)
+						}
+					}
+					value = chars.join('')
+					timeElUndoRedoStateMachine.push(value, start, end)
+					return
+				}
 				if (value[start - 1] === ':') start--
 				if (start <= 0) return
 				value = value.slice(0, start - 1) + '0' + value.slice(start)
-				timeElUndoRedoStateMachine.push(value, start - 1)
+				timeElUndoRedoStateMachine.push(value, start - 1, start - 1)
 				return
 			}
 
@@ -163,7 +184,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 			value = value.slice(0, start) + digit + value.slice(start + 1)
 			start = start + 1 + (value[start + 1] === ':' ? 1 : 0)
-			timeElUndoRedoStateMachine.push(value, start)
+			timeElUndoRedoStateMachine.push(value, start, start)
 		},
 	})
 	timeElUndoRedoStateMachine = new TimeInputHistoryStack(timeEl)
