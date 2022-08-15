@@ -17,15 +17,19 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 })
 
 function addFuncs(funcSet, target) {
-	if (target.querySelector('.object_view_sidebar')) funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
-	if (target.querySelector('.task_form')) funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
+	if (shared.isCurrentUserOwner()) {
+		if (target.querySelector('.object_view_sidebar')) funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
+		if (target.querySelector('.task_form')) funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
+	}
 	if (target.querySelector('.task-modal-header')) funcSet.add(injectTaskIntoTaskModal)
 	if (target.querySelector('.task_view_mode')) funcSet.add(injectTimersIntoTaskViewTasks)
 }
 
 export function init() {
-	injectChangeProjectMembersButtonIntoObjectView()
-	injectChangeProjectMembersButtonIntoTaskForm()
+	if (shared.isCurrentUserOwner()) {
+		injectChangeProjectMembersButtonIntoObjectView()
+		injectChangeProjectMembersButtonIntoTaskForm()
+	}
 	injectTaskIntoTaskModal()
 	injectTimersIntoTaskViewTasks()
 	const unsub = injectTimerIntoTopBar()

@@ -26,6 +26,11 @@ export function formatDuration(duration = 0, separator = ':', includeSeconds = T
 	return parts.join(separator)
 }
 
+export function getCurrentUser() {
+	const id = angie.user_session_data.logged_user_id
+	return angie.user_session_data.users.find(x => x.id === id)
+}
+
 export function getProjectIdFromDocumentLocation() {
 	const { location: url } = document
 
@@ -71,6 +76,10 @@ export function getProjectIdAndTaskIdFromDocumentLocation() {
 export function getTimerDuration(timer) {
 	if (!timer) return 0
 	return timer.duration + (timer.running ? (Date.now() - timer.started_at) : 0)
+}
+
+export function isCurrentUserOwner() {
+	return getCurrentUser()?.class === 'Owner'
 }
 
 export function isTimerSubmittable(timer) {
