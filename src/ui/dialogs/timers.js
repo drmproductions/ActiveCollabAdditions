@@ -309,7 +309,7 @@ export function show() {
 		submitAllButtonEl.style.display = hasSubmittableTimer ? '' : 'none'
 		deleteAllButtonEl.style.display = hasSubmittableTimer ? '' : 'none'
 
-		if (favoriteTasks.length === 0 && timers.length === 0) {
+		if (favoriteTasks.length === 0 && !hasSubmittableTimer) {
 			clearTimeout(timeout)
 			updateMessage('No timers started')
 			showMessage()
