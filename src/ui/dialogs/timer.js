@@ -27,13 +27,19 @@ class TimeInputHistoryStack {
 	get() {
 		const selection = document.getSelection()
 		const value = this._el.innerText
+
 		// fix for firefox weirdness when all the text is selected
 		// SEE https://bugzilla.mozilla.org/show_bug.cgi?id=688379
 		// SEE https://bugzilla.mozilla.org/show_bug.cgi?id=569190
 		if (selection.anchorNode === this._el) {
 			return { end: value.length, start: 0, value }
 		}
-		const range = document.getSelection().getRangeAt(0).cloneRange()
+
+		if (!this._el.contains(selection.anchorNode)) {
+			return { end: value.length, start: 0, value }
+		}
+
+		const range = selection.getRangeAt(0).cloneRange()
 		const end = Math.max(range.startOffset, range.endOffset)
 		const start = Math.min(range.startOffset, range.endOffset)
 		return { end, start, value }
