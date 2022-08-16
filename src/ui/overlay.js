@@ -32,8 +32,8 @@ function Overlay(id, options = {}, children) {
 			options?.onDismiss?.()
 			hide(id)
 		},
-		onConnected(el) {
-			setTimeout(() => el.style.opacity = 1, 10)
+		onConnected() {
+			setTimeout(() => this.style.opacity = 1, 10)
 		},
 		onContextMenu(e) {
 			if (e.target !== this) return
@@ -75,7 +75,7 @@ export function hide(id) {
 	}
 
 	overlay.style.opacity = 0
-	setTimeout(() => overlay.parentNode.remove(), 200)
+	setTimeout(() => overlay.remove(), 200)
 }
 
 export function isOpen(id) {

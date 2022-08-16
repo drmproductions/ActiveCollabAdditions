@@ -93,10 +93,10 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 
 	function draw() {
 		if (!updatableContext.projectId || !updatableContext.taskId) {
-			innerEl.parentNode.parentNode.style.display = 'none'
+			innerEl.parentNode.style.display = 'none'
 			return
 		}
-		innerEl.parentNode.parentNode.style.display = ''
+		innerEl.parentNode.style.display = ''
 
 		if (!timer) {
 			innerEl.innerText = shared.formatDuration(0)

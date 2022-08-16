@@ -4,7 +4,7 @@ import * as cache from './cache.js'
 import * as db from './db.js'
 import * as shared from './shared.js'
 import { ChangeProjectMembersButton } from './ui/ChangeProjectMembersButton.js'
-import { El, getEl, getTopEl } from './ui/el.js'
+import { El } from './ui/el.js'
 import { Timer } from './ui/Timer.js'
 import { useStyle } from './ui/style.js'
 
@@ -52,7 +52,7 @@ export function init() {
 		document.body.querySelectorAll('.acit-top-bar-timer-wrapper')?.remove()
 		document.body.querySelectorAll('.acit-top-bar-timers-button')?.remove()
 		for (const el of document.body.querySelectorAll('.acit-timer')) {
-			getTopEl(el).remove()
+			el.remove()
 		}
 	}
 }
@@ -89,7 +89,7 @@ function injectTimerIntoTopBar() {
 			if (timer) {
 				const projectName = await cache.getProjectName({ projectId })
 				const taskName = await cache.getTaskName({ projectId: timer.projectId, taskId: timer.taskId })
-				getEl(timerEl).title = `${projectName} - ${taskName}`
+				timerEl.title = `${projectName} - ${taskName}`
 			}
 		}
 	}

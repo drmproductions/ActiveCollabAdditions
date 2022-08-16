@@ -7,33 +7,32 @@ const svgTags = [
 	'svg',
 ]
 
-class ElWrapper extends HTMLElement {
-	static initialized = false
+const customElementClasses = new Map()
 
-	static initialize() {
-		if (ElWrapper.initialized) return
-		// NOTE ignore the following comment until we get hot reload working with ES modules
-		// you can't reuse custom element names, so we just append a number to the end that gets incremented
-		window.customElements.define('acit-el-' + (window.acit_el = (window.acit_el ?? 0) + 1), ElWrapper)
-		ElWrapper.initialized = true
+function createCustomElement(tag) {
+	const customElementClass = customElementClasses.get(tag)
+	if (customElementClass) {
+		return new customElementClass()
 	}
-
-	constructor(el) {
-		super()
-		this._el = el
-		this.onconnected = undefined
-		this.ondisconnected = undefined
-		this.style.display = 'contents'
-		this.append(el)
+	const { constructor } = document.createElement(tag)
+	function CustomElement() {
+		return Reflect.construct(constructor, [], CustomElement)
 	}
-
-	connectedCallback() {
-		this.onconnected?.(this._el)
+	CustomElement.prototype.connectedCallback = function(e) {
+		if (this.onconnected) {
+			this.onconnected(e)
+		}
 	}
-
-	disconnectedCallback() {
-		this.ondisconnected?.(this._el)
+	CustomElement.prototype.disconnectedCallback = function(e) {
+		if (this.ondisconnected) {
+			this.ondisconnected(e)
+		}
 	}
+	Object.setPrototypeOf(CustomElement.prototype, constructor.prototype)
+	Object.setPrototypeOf(CustomElement, constructor)
+	customElements.define(`custom-${tag}`, CustomElement, { extends: tag })
+	customElementClasses.set(tag, CustomElement)
+	return new CustomElement()
 }
 
 function createElement(selector, options, children) {
@@ -50,19 +49,11 @@ function createElement(selector, options, children) {
 
 	let el = isSVG
 		? document.createElementNS('http://www.w3.org/2000/svg', tag)
-		: document.createElement(tag)
+		: createCustomElement(tag)
 
 	if (classNames) {
 		for (const className of classNames)
 			el.classList.add(className)
-	}
-
-	if (options?.onConnected || options?.onDisconnected) {
-		if (isSVG) {
-			throw new Error(`onConnected and onDisconnected is not supported on SVGElements right now.`)
-		}
-		ElWrapper.initialize()
-		el = new ElWrapper(el)
 	}
 
 	setChildren(el, children)
@@ -71,35 +62,9 @@ function createElement(selector, options, children) {
 	return el
 }
 
-export function getEl(el) {
-	if (el instanceof ElWrapper) {
-		return el.firstChild
-	}
-	return el
-}
-
-export function getTopEl(el) {
-	if (el.parentNode instanceof ElWrapper) {
-		return el.parentNode
-	}
-	return el
-}
-
-export function getWrapperEl(el) {
-	if (el instanceof ElWrapper) {
-		return el
-	}
-	el = el.parentNode
-	if (el instanceof ElWrapper) {
-		return el
-	}
-	throw new Error('Passed element is not wrapped in a ElWrapper')
-}
-
 export function setChildren(el, children) {
 	if (!(el instanceof Element)) return
 
-	el = getEl(el)
 	el.innerHTML = ''
 
 	if (!children) return
@@ -125,8 +90,6 @@ export function setOptions(el, options) {
 	if (!(el instanceof Element)) return
 	if (typeof options !== 'object') return
 
-	el = getEl(el)
-
 	const isSVG = el instanceof SVGElement
 
 	for (let [k1, v1] of Object.entries(options)) {
@@ -135,7 +98,10 @@ export function setOptions(el, options) {
 		switch (k1) {
 			case 'onconnected':
 			case 'ondisconnected':
-				getWrapperEl(el)[k1] = v1
+				if (isSVG) {
+					throw new Error('onconnected and ondisconnected are not supported on SVG elements')
+				}
+				el[k1] = v1
 				break
 			case 'dataset':
 				for (let [k2, v2] of Object.entries(v1)) {
