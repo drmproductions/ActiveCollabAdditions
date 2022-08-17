@@ -2,32 +2,43 @@ const chokidar = require('chokidar')
 const esbuild = require('esbuild')
 const fs = require('fs')
 
+let ignoreMetaJsonChanges = false
+
 const options = {
 	bundle: true,
 	entryPoints: ['./src/index.js'],
 	target: ['es6'],
 }
 
+function readMeta() {
+	try {
+		return JSON.parse(fs.readFileSync('src/meta.json'))
+	}
+	catch {}
+	return {
+		version: 0,
+	}
+}
+
+function writeMeta(meta) {
+	fs.writeFileSync('src/meta.json', JSON.stringify(meta, null, '\t'))
+}
+
 async function build() {
-	const oldVersion = parseInt(fs.readFileSync('www/version').toString())
-	const newVersion = oldVersion + 1
-
-	const oldBuildInfo = fs.readFileSync('src/buildinfo.js')
-
-	fs.writeFileSync('src/buildinfo.js', [
-		`export const VERSION = ${newVersion}`,
-	].join('\n'))
+	const oldMeta = readMeta()
+	const newMeta = { ...oldMeta }
+	newMeta.version++
 
 	try {
+		writeMeta(newMeta)
 		await esbuild.build({
 			...options,
 			minify: true,
 			outfile: './www/bundle.js',
 		})
-		fs.writeFileSync('www/version', newVersion.toString())
 	}
 	catch (e) {
-		fs.writeFileSync('src/buildinfo.js', oldBuildInfo)
+		writeMeta(oldMeta)
 		throw e
 	}
 }
@@ -42,33 +53,45 @@ function watch() {
 	}
 
 	async function update() {
+		ignoreMetaJsonChanges = true
+
 		console.log('Building...')
 
-		const oldBuildInfo = fs.readFileSync('src/buildinfo.js')
+		const oldMeta = readMeta()
+		const newMeta = { ...oldMeta }
+		newMeta.version = 'DEVELOPMENT'
 
-		fs.writeFileSync('src/buildinfo.js', [
-			`export const VERSION = -1`,
-		].join('\n'))
+		writeMeta(newMeta)
 
-		await esbuild.build({
-			...options,
-			outfile: './out/bundle.js',
-		})
+		try {
+			await esbuild.build({
+				...options,
+				outfile: './out/bundle.js',
+			})
 
-		fs.writeFileSync('src/buildinfo.js', oldBuildInfo)
+			if (isChromiumBuilt) {
+				fs.copyFileSync('out/bundle.js', 'out/chromium/current/bundle.js')
+			}
 
-		if (isChromiumBuilt) {
-			fs.copyFileSync('out/bundle.js', 'out/chromium/current/bundle.js')
+			if (isFirefoxBuilt) {
+				fs.copyFileSync('out/bundle.js', 'out/firefox/current/bundle.js')
+			}
+		}
+		catch (e) {
+			console.error(e)
 		}
 
-		if (isFirefoxBuilt) {
-			fs.copyFileSync('out/bundle.js', 'out/firefox/current/bundle.js')
-		}
+		writeMeta(oldMeta)
+
+		ignoreMetaJsonChanges = false
 	}
 
 	let timeout
 	chokidar.watch('src').on('all', (event, path) => {
-		if (path === 'src/buildinfo.js') return
+		if (path === 'src/meta.json' && ignoreMetaJsonChanges) {
+			return
+		}
+		console.log(event, path)
 		clearTimeout(timeout)
 		timeout = setTimeout(update, 200)
 	})

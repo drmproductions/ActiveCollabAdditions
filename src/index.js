@@ -1,11 +1,11 @@
 import * as PreferencesDialog from './ui/dialogs/preferences.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
-import * as buildinfo from './buildinfo.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
 import * as eljector from './eljector.js'
 import * as log from './log.js'
+import * as meta from './meta.json'
 import * as theme from './theme.js'
 import * as utils from './utils.js'
 
@@ -57,5 +57,5 @@ utils.call(async () => {
 		TimersDialog.hide()
 	})
 
-	log.i('', `Version ${buildinfo.VERSION} loaded`)
+	log.i('', `Version ${meta.version} loaded`)
 })

@@ -7,7 +7,7 @@ if (!['chromium', 'firefox'].includes(target)) {
 	throw new Error(`Invalid target ${target}.`)
 }
 
-const version = fs.readFileSync('www/version').toString()
+const version = JSON.parse(fs.readFileSync('src/meta.json')).version
 const outDir = `${process.cwd()}/out/${target}/current`
 const zipPath = `${process.cwd()}/out/${target}/${version}.zip`
 const iconFilenames = fs.readdirSync(`www/icons`).filter(x => x.endsWith('.png'))
