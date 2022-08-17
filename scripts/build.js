@@ -16,7 +16,7 @@ function readMeta() {
 	}
 	catch {}
 	return {
-		version: 0,
+		version: '0',
 	}
 }
 
@@ -27,7 +27,7 @@ function writeMeta(meta) {
 async function build() {
 	const oldMeta = readMeta()
 	const newMeta = { ...oldMeta }
-	newMeta.version++
+	newMeta.version = (parseInt(newMeta.version) + 1).toString()
 
 	try {
 		writeMeta(newMeta)
