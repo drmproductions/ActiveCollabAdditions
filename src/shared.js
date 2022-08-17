@@ -146,7 +146,7 @@ export async function submitTimer({ projectId, taskId }) {
 	}
 
 	const d = new Date()
-	const recordDate = `${d.getFullYear()}-${d.getMonth().toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+	const recordDate = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
 
 	const jobTypeId = timer.jobTypeId ?? await preferences.getTimersDefaultJobType()
 
