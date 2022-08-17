@@ -8,6 +8,17 @@ import { El } from './ui/el.js'
 import { Timer } from './ui/Timer.js'
 import { useStyle } from './ui/style.js'
 
+document.body.classList.add(useStyle({
+	// decrease project header max width to account for our injected elements
+	' .project-header': {
+		width: 'calc(100% - 344px) !important',
+		// this is an unnecessary div that causes layout issues
+		' > .tw-w-32.tw-h-full': {
+			display: 'none',
+		},
+	},
+}))
+
 const showTimerWhenHoveringOverTaskClassName = useStyle({
 	':hover': {
 		' .acit-timer-menu-button': {
