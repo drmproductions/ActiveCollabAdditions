@@ -362,7 +362,6 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		favoritedButtonEl.title = isFavorite ? 'Unfavorite' : 'Favorite'
 
 		const timer = await db.getTimer(projectId, taskId)
-		const task = await cache.getTask({ projectId, taskId })
 
 		const isSubmittable = timer && shared.isTimerSubmittable(timer)
 		submitButtonEl.style.display = isSubmittable ? '' : 'none'
@@ -380,6 +379,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 				descriptionEl.value = value
 			}
 		}
+
+		const task = await cache.getTask({ projectId, taskId })
 
 		if (await shared.getUserCanChangeIsBillable({ projectId })) {
 			if (followTaskIsBillableEl.style.display !== 'none') {
