@@ -21,32 +21,40 @@ export function JobTypeSelect({ id, projectId, taskId, style }) {
 				placeholder: 'Choose a job type',
 				target: this,
 				async onClick({ id }) {
-					await api.putTask({ projectId, taskId }, { job_type_id: id })
-					await update()
+					if (taskId) {
+						await api.putTask({ projectId, taskId }, { job_type_id: id })
+					}
+					await update(id)
 					return 'hide'
 				},
 				async onUpdate() {
-					const { job_type_id } = await cache.getTask({ projectId, taskId })
+					let jobTypeId = parseInt(el.dataset.jobTypeId)
+					if (taskId) {
+						const task = await cache.getTask({ projectId, taskId })
+						jobTypeId = task.job_type_id
+					}
+					if (isNaN(jobTypeId)) jobTypeId = 0
 					let jobTypes = angie.user_session_data.job_types.filter(x => !x.is_archived)
 					jobTypes.unshift({ id: 0, name: 'No Job Type...' })
 					jobTypes = jobTypes.map(({ id, name: text }) =>
-						({ id, text, checked: id === job_type_id }))
+						({ id, text, checked: id === jobTypeId }))
 					return jobTypes
 				},
 			})
 		},
 	})
 
-	async function update() {
-		const { job_type_id } = await cache.getTask({ projectId, taskId })
-		const jobType = angie.user_session_data.job_types.find(x => x.id === job_type_id)
+	async function update(jobTypeId) {
+		if (taskId) {
+			const task = await cache.getTask({ projectId, taskId })
+			jobTypeId = task.job_type_id
+		}
+		const jobType = angie.user_session_data.job_types.find(x => x.id === jobTypeId)
 		el.innerText = jobType?.name ?? 'No Job Type...'
+		el.dataset.jobTypeId = jobType?.id ?? 0
 	}
 
 	update()
 
-	return El(`div.object_view_property.${id}`, [
-		El('label', 'Job Type'),
-		el,
-	])
+	return el
 }

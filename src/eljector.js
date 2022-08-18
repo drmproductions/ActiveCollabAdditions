@@ -29,17 +29,34 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 })
 
 function addFuncs(funcSet, target) {
-	if (target.querySelector('.object_view_sidebar')) funcSet.add(injectJobTypeSelectIntoObjectView)
-	if (shared.isCurrentUserOwner()) {
-		if (target.querySelector('.object_view_sidebar')) funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
-		if (target.querySelector('.task_form')) funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
+	if (target.querySelector('.object_view_sidebar')) {
+		funcSet.add(injectJobTypeSelectIntoObjectView)
+
+		if (shared.isCurrentUserOwner()) {
+			funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
+		}
 	}
-	if (target.querySelector('.task-modal-header')) funcSet.add(injectTimerIntoTaskModal)
-	if (target.querySelector('.task_view_mode')) funcSet.add(injectTimersIntoTaskViewTasks)
+
+	if (target.querySelector('.task_form')) {
+		funcSet.add(injectJobTypeSelectIntoTaskForm)
+
+		if (shared.isCurrentUserOwner()) {
+			funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
+		}
+	}
+
+	if (target.querySelector('.task-modal-header')) {
+		funcSet.add(injectTimerIntoTaskModal)
+	}
+
+	if (target.querySelector('.task_view_mode')) {
+		funcSet.add(injectTimersIntoTaskViewTasks)
+	}
 }
 
 export function init() {
 	injectJobTypeSelectIntoObjectView()
+	injectJobTypeSelectIntoTaskForm()
 	if (shared.isCurrentUserOwner()) {
 		injectChangeProjectMembersButtonIntoObjectView()
 		injectChangeProjectMembersButtonIntoTaskForm()
@@ -159,8 +176,39 @@ function injectJobTypeSelectIntoObjectView() {
 	if (!ids) return
 	const { projectId, taskId } = ids
 
-	const selectEl = JobTypeSelect({ id, projectId, taskId })
-	parentNode.insertBefore(selectEl, propertyEl)
+	parentNode.insertBefore(El('div.object_view_property', [
+		El('label', 'Job Type'),
+		JobTypeSelect({ id, projectId, taskId }),
+	]), propertyEl)
+}
+
+function injectJobTypeSelectIntoTaskForm() {
+	const wrapperEl = document.body.querySelector('div.project_tasks_add_wrapper')
+	if (!wrapperEl) return
+
+	const id = 'acit-job-type-select-inline'
+	if (wrapperEl.querySelector(`.${id}`)) return
+
+	const siblingEl = document.body.querySelector('div.select_assignee_new_popover')
+	if (!siblingEl) return
+
+	const ids = shared.getProjectIdFromUrl(document.location)
+	if (!ids) return
+	const { projectId } = ids
+
+	siblingEl.parentNode.parentNode.insertBefore(El('div.form_field', [
+		El('label', 'Job Type'),
+		JobTypeSelect({
+			id,
+			projectId,
+			style: {
+				fontSize: 13,
+				fontWeight: 'inherit',
+				minHeight: 'unset',
+				textDecoration: 'underline',
+			},
+		}),
+	]), siblingEl.parentNode)
 }
 
 function injectChangeProjectMembersButtonIntoObjectView() {
@@ -198,6 +246,7 @@ function injectChangeProjectMembersButtonIntoTaskForm() {
 		style: {
 			fontSize: 13,
 			fontWeight: 'inherit',
+			minHeight: 'unset',
 			textDecoration: 'underline',
 		},
 	})
