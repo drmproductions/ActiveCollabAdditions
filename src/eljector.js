@@ -34,7 +34,7 @@ function addFuncs(funcSet, target) {
 		if (target.querySelector('.object_view_sidebar')) funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
 		if (target.querySelector('.task_form')) funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
 	}
-	if (target.querySelector('.task-modal-header')) funcSet.add(injectTaskIntoTaskModal)
+	if (target.querySelector('.task-modal-header')) funcSet.add(injectTimerIntoTaskModal)
 	if (target.querySelector('.task_view_mode')) funcSet.add(injectTimersIntoTaskViewTasks)
 }
 
@@ -44,7 +44,7 @@ export function init() {
 		injectChangeProjectMembersButtonIntoObjectView()
 		injectChangeProjectMembersButtonIntoTaskForm()
 	}
-	injectTaskIntoTaskModal()
+	injectTimerIntoTaskModal()
 	injectTimersIntoTaskViewTasks()
 	const unsub = injectTimerIntoTopBar()
 
@@ -204,7 +204,7 @@ function injectChangeProjectMembersButtonIntoTaskForm() {
 	siblingEl.parentNode.appendChild(buttonEl)
 }
 
-function injectTaskIntoTaskModal() {
+function injectTimerIntoTaskModal() {
 	let el
 
 	const headerEl = document.body.querySelector('h1.task-modal-header')
