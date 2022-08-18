@@ -114,7 +114,7 @@ export async function show() {
 		El('option', { value: 'mixed' }, 'Mixed'),
 	])
 
-	const dialogEl = Dialog({ width: 550 }, [
+	const dialogEl = Dialog({}, [
 		DialogHeader('Preferences', [
 			DialogHeaderButton({
 				icon: angie.icons.svg_icons_cancel,

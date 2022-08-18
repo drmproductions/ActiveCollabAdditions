@@ -391,7 +391,7 @@ export function show() {
 		}
 	}
 
-	const dialogEl = Dialog({ onConnected, onDisconnected }, [
+	const dialogEl = Dialog({ width: 600, onConnected, onDisconnected }, [
 		DialogHeader('Timers', [
 			DialogHeaderButton({
 				icon: angie.icons.main_menu_icon_system_settings,

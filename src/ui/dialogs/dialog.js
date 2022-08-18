@@ -8,10 +8,14 @@ export function Dialog(options = {}, children) {
 		color: 'var(--color-theme-900)',
 		overflow: 'hidden',
 		position: 'relative',
-		minWidth: options.width ?? 600,
+	}
+
+	if (options.width) {
+		style.width = options.width
 	}
 
 	if (!options.centered && options.target) {
+		style.width = style.width ?? 600
 		const { x, y, width, height } = options.target.getBoundingClientRect()
 		style.$ = {
 			position: 'fixed',
