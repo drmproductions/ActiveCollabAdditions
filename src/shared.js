@@ -71,7 +71,9 @@ export function getProjectIdAndTaskIdFromUrl(url) {
 
 export async function getTaskJobType(task) {
 	const { job_type_id } = task
-	if (job_type_id !== 0) return job_type_id
+	if (angie.collections.job_types.some(x => x.id === job_type_id)) {
+		return job_type_id
+	}
 	return await preferences.getTimersDefaultJobType()
 }
 
