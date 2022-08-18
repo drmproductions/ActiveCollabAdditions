@@ -46,6 +46,20 @@ export function deleteFavoriteTask(projectId, taskId) {
 	})
 }
 
+export function deletePreference(key) {
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction('preferences', 'readwrite')
+		transaction.oncomplete = () => {
+			bus.emit('preference-changed', { data: { key } })
+			resolve()
+		}
+		transaction.onerror = reject
+
+		const objectStore = transaction.objectStore('preferences')
+		objectStore.delete(key)
+	})
+}
+
 export function deleteTimer(projectId, taskId) {
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction('timers', 'readwrite')
@@ -147,6 +161,12 @@ export function getTimers() {
 			result = event.target.result
 		}
 	})
+}
+
+export async function hasPreference(key) {
+	const preference = await getPreference(key)
+	if (preference === undefined) return false
+	return true
 }
 
 export async function init() {

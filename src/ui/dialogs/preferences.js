@@ -22,38 +22,67 @@ export async function show() {
 		return El('option', { value: id }, name)
 	}))
 
-	const timersMinimumEntryEl = El('select', {
-		style: {
-			paddingTop: '6px !important',
-			width: 'fit-content',
-		},
-		value: await preferences.getTimersMinimumEntry(),
-		async onChange() {
-			await preferences.setTimersMinimumEntry(parseInt(this.value))
-		},
-	}, [
+	const minimumEntryOptionEls = [
 		El('option', { value: 0 }, 'No Minimum'),
 		El('option', { value: 15 }, '15 Minutes'),
 		El('option', { value: 30 }, '30 Minutes'),
 		El('option', { value: 45 }, '45 Minutes'),
 		El('option', { value: 60 }, '60 Minutes'),
-	])
+	]
+
+	const roundingIntervalOptionEls = [
+		El('option', { value: 0 }, 'Don\'t Round'),
+		El('option', { value: 15 }, '15 Minutes'),
+		El('option', { value: 30 }, '30 Minutes'),
+		El('option', { value: 60 }, '60 Minutes'),
+	]
+
+	if (preferences.getAngieStopwatchSettingsEnabled()) {
+		minimumEntryOptionEls.push(El('option', { value: -1 }, 'Follow System Default'))
+		roundingIntervalOptionEls.push(El('option', { value: -1 }, 'Follow System Default'))
+	}
+
+	const minimumEntryValue = await preferences.hasTimersMinimumEntry()
+		  ? await preferences.getTimersMinimumEntry()
+		  : (preferences.getAngieStopwatchSettingsEnabled() ? -1 : 0)
+
+	const roundingIntervalValue = await preferences.hasTimersRoundingInterval()
+		  ? await preferences.getTimersRoundingInterval()
+		  : (preferences.getAngieStopwatchSettingsEnabled() ? -1 : 0)
+
+	const timersMinimumEntryEl = El('select', {
+		style: {
+			paddingTop: '6px !important',
+			width: 'fit-content',
+		},
+		value: minimumEntryValue,
+		async onChange() {
+			const value = parseInt(this.value)
+			if (value === -1) {
+				await preferences.deleteTimersMinimumEntry()
+			}
+			else {
+				await preferences.setTimersMinimumEntry(value)
+			}
+		},
+	}, minimumEntryOptionEls)
 
 	const timersRoundingIntervalEl = El('select', {
 		style: {
 			paddingTop: '6px !important',
 			width: 'fit-content',
 		},
-		value: await preferences.getTimersRoundingInterval(),
+		value: roundingIntervalValue,
 		async onChange() {
-			await preferences.setTimersRoundingInterval(parseInt(this.value))
+			const value = parseInt(this.value)
+			if (value === -1) {
+				await preferences.deleteTimersRoundingInterval()
+			}
+			else {
+				await preferences.setTimersRoundingInterval(value)
+			}
 		},
-	}, [
-		El('option', { value: 0 }, 'Don\'t Round'),
-		El('option', { value: 15 }, '15 Minutes'),
-		El('option', { value: 30 }, '30 Minutes'),
-		El('option', { value: 60 }, '60 Minutes'),
-	])
+	}, roundingIntervalOptionEls)
 
 	const timersColorSchemeEl = El('select', {
 		style: {

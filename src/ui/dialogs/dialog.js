@@ -8,7 +8,7 @@ export function Dialog(options = {}, children) {
 		color: 'var(--color-theme-900)',
 		overflow: 'hidden',
 		position: 'relative',
-		width: options.width ?? 600,
+		minWidth: options.width ?? 600,
 	}
 
 	if (!options.centered && options.target) {
