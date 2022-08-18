@@ -67,6 +67,7 @@ export async function show() {
 	}, [
 		El('option', { value: 'default' }, 'Theme Accent'),
 		El('option', { value: 'stop-light' }, 'Stop Light'),
+		El('option', { value: 'classic' }, 'Classic'),
 	])
 
 	const timersStyleEl = El('select', {

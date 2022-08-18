@@ -28,6 +28,31 @@ const colors = {
 			running: { background: '#ff3c3c', text: 'var(--color-theme-900)' },
 		},
 	},
+	classic: {
+		default: {
+			initial: { background: '#44a6ff', text: 'white' },
+			paused: { background: '#ffc637', text: 'white' },
+			running: { background: '#ff3c3c', text: 'white' },
+		},
+		mixed: {
+			initial: {
+				background: 'var(--border-primary)',
+				text: 'var(--color-theme-900)',
+				hover: { background: '#44a6ff' },
+			},
+			paused: { background: '#ffc637', text: 'white' },
+			running: { background: '#ff3c3c', text: 'white' },
+		},
+		outline: {
+			initial: {
+				background: 'var(--border-primary)',
+				text: 'var(--color-theme-900)',
+				hover: { background: '#44a6ff' },
+			},
+			paused: { background: '#ffc637', text: 'var(--color-theme-900)' },
+			running: { background: '#ff3c3c', text: 'var(--color-theme-900)' },
+		},
+	},
 	'stop-light': {
 		default: {
 			initial: { background: '#ff3c3c', text: 'white' },
