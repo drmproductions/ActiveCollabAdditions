@@ -155,7 +155,7 @@ function injectJobTypeSelectIntoObjectView() {
 	const id = 'acit-job-type-select-modal'
 	if (parentNode.querySelector(`.${id}`)) return
 
-	const ids = shared.getProjectIdAndTaskIdFromDocumentLocation()
+	const ids = shared.getProjectIdAndTaskIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId, taskId } = ids
 
@@ -170,7 +170,7 @@ function injectChangeProjectMembersButtonIntoObjectView() {
 	const id = 'acit-change-project-members-button-modal'
 	if (propertyEl.querySelector(`.${id}`)) return
 
-	const ids = shared.getProjectIdFromDocumentLocation()
+	const ids = shared.getProjectIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId } = ids
 
@@ -188,7 +188,7 @@ function injectChangeProjectMembersButtonIntoTaskForm() {
 	const siblingEl = document.body.querySelector('div.select_assignee_new_popover')
 	if (!siblingEl) return
 
-	const ids = shared.getProjectIdFromDocumentLocation()
+	const ids = shared.getProjectIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId } = ids
 
@@ -222,7 +222,7 @@ function injectTimerIntoTaskModal() {
 	if (!(el = el.querySelector('a.project_name_task_modal'))) return
 	const projectName = el.innerText
 
-	const ids = shared.getProjectIdAndTaskIdFromDocumentLocation()
+	const ids = shared.getProjectIdAndTaskIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId, taskId } = ids
 

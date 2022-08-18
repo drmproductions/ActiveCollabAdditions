@@ -31,9 +31,7 @@ export function getCurrentUser() {
 	return angie.user_session_data.users.find(x => x.id === id)
 }
 
-export function getProjectIdFromDocumentLocation() {
-	const { location: url } = document
-
+export function getProjectIdFromUrl(url) {
 	let matches, projectId
 
 	if (matches = url.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {
@@ -50,9 +48,7 @@ export function getProjectIdFromDocumentLocation() {
 	return { projectId }
 }
 
-export function getProjectIdAndTaskIdFromDocumentLocation() {
-	const { location: url } = document
-
+export function getProjectIdAndTaskIdFromUrl(url) {
 	let matches, projectId, taskId
 
 	if (matches = url.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {

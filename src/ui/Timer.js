@@ -1,6 +1,6 @@
 import * as TimerDialog from './dialogs/timer.js'
 import * as bus from '../bus.js'
-import * as cache from '../cache.js'
+import * as cacher from '../cacher.js'
 import * as db from '../db.js'
 import * as shared from '../shared.js'
 import { El } from './el.js'
@@ -72,7 +72,7 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 				started_at: Date.now(),
 				taskId: updatableContext.taskId,
 			})
-			cache.preloadTasks({ projectId: updatableContext.projectId })
+			cacher.preloadTasks({ projectId: updatableContext.projectId })
 		}
 
 		// pause other timers

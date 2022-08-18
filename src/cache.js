@@ -1,7 +1,5 @@
 import * as api from './api.js'
-import * as db from './db.js'
 import * as log from './log.js'
-import * as utils from './utils.js'
 
 const cacheLockFuncsMap = new Map()
 const cacheMap = new Map()
@@ -44,84 +42,6 @@ export function hasProject({ projectId }) {
 
 export function hasTask({ projectId, taskId }) {
 	return has(`task-${projectId}-${taskId}`)
-}
-
-export async function init() {
-	const start = performance.now()
-
-	const promises = []
-
-	// preload my tasks
-
-	promises.push(utils.call(async () => {
-		let count = 0
-
-		const { tasks } = await api.getMyTasks()
-		for (const task of tasks) {
-			const projectId = task.project_id
-			const taskId = task.id
-			if (!hasTask({ projectId, taskId }))
-				count++
-			setTask({ projectId, taskId }, task)
-		}
-
-		if (count > 0) {
-			log.i('cache', `preloaded ${count} of my tasks`)
-		}
-	}))
-
-	// preload my projects and all tasks for projects with timers started
-
-	promises.push(utils.call(async () => {
-		let count = 0
-		const promises = []
-		const projectIdSet = new Set()
-
-		for (const { projectId } of await db.getFavoriteTasks()) {
-			projectIdSet.add(projectId)
-		}
-
-		for (const { projectId } of await db.getTimers()) {
-			projectIdSet.add(projectId)
-		}
-
-		const projects = await api.getProjects()
-		for (const project of projects) {
-			const projectId = project.id
-			if (!hasProject({ projectId }))
-				count++
-			setProject({ projectId }, project)
-			if (projectIdSet.has(projectId)) {
-				promises.push(preloadTasks({ projectId }))
-			}
-		}
-
-		if (count > 0) {
-			log.i('cache', `preloaded ${count} projects`)
-		}
-
-		await Promise.all(promises)
-	}))
-
-	await Promise.all(promises)
-
-	log.i('cache', `preload completed in ${Math.floor(performance.now() - start)} ms`)
-}
-
-export async function preloadTasks({ projectId }) {
-	await useCache(`tasks-${projectId}`, async () => {
-		let count = 0
-		const { tasks } = await api.getTasks({ projectId })
-		for (const task of tasks) {
-			const taskId = task.id
-			if (!hasTask({ projectId, taskId }))
-				count++
-			setTask({ projectId, taskId }, task)
-		}
-		if (count > 0) {
-			log.i('cache', `preloaded ${count} tasks for project ${projectId}`)
-		}
-	})
 }
 
 function set(key, value) {
