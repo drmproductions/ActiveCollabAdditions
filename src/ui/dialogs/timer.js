@@ -263,6 +263,10 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		disabled: true,
 		type: 'checkbox',
 		async onChange() {
+			if (await shared.getUserCanChangeIsBillable({ projectId })) {
+				await shared.updateTask({ projectId, taskId }, { is_billable: this.checked })
+				return
+			}
 			await createOrUpdateTimer(projectId, taskId, {
 				isBillable: this.checked,
 			})
@@ -295,28 +299,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			paddingTop: '6px !important',
 			width: 'fit-content'
 		},
-		value: await preferences.getTimersDefaultJobType(),
 		async onChange() {
-			const value = parseInt(this.value)
-			const defaultValue = await preferences.getTimersDefaultJobType()
-
-			if (value === defaultValue) {
-				const timer = await db.getTimer(projectId, taskId)
-				if (timer) {
-					delete timer.jobTypeId
-					if (await shared.isTimerInDefaultState(timer)) {
-						await db.deleteTimer(projectId, taskId)
-					}
-					else {
-						await db.updateTimer(timer)
-					}
-				}
-				return
-			}
-
-			await createOrUpdateTimer(projectId, taskId, {
-				jobTypeId: value,
-			})
+			await shared.updateTask({ projectId, taskId }, { job_type_id: parseInt(this.value) })
 		},
 	}, angie.collections.job_types.map(({ id, name }) => {
 		return El('option', { value: id }, name)
@@ -378,6 +362,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		favoritedButtonEl.title = isFavorite ? 'Unfavorite' : 'Favorite'
 
 		const timer = await db.getTimer(projectId, taskId)
+		const task = await cache.getTask({ projectId, taskId })
 
 		const isSubmittable = timer && shared.isTimerSubmittable(timer)
 		submitButtonEl.style.display = isSubmittable ? '' : 'none'
@@ -396,7 +381,18 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			}
 		}
 
-		{
+		if (await shared.getUserCanChangeIsBillable({ projectId })) {
+			if (followTaskIsBillableEl.style.display !== 'none') {
+				followTaskIsBillableEl.style.display = 'none'
+			}
+			if (isBillableEl.disabled) {
+				isBillableEl.disabled = false
+			}
+			if (isBillableEl.checked !== task.is_billable) {
+				isBillableEl.checked = task.is_billable
+			}
+		}
+		else {
 			let value
 			let followTaskStyleDisplay
 			if (timer && typeof timer.isBillable === 'boolean') {
@@ -405,8 +401,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			}
 			else {
 				followTaskStyleDisplay = 'none'
-				const res = await cache.getTask({ projectId, taskId })
-				value = res.is_billable
+				value = task.is_billable
 			}
 
 			if (followTaskStyleDisplay !== followTaskIsBillableEl.style.display) {
@@ -423,11 +418,9 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		}
 
 		{
-			const value = (timer && typeof timer.jobTypeId === 'number')
-				? timer.jobTypeId
-				: await preferences.getTimersDefaultJobType()
-			if (value !== parseInt(jobTypeEl.value)) {
-				jobTypeEl.value = value
+			const jobTypeId = await shared.getTaskJobType(task)
+			if (jobTypeEl.value !== jobTypeId) {
+				jobTypeEl.value = jobTypeId
 			}
 		}
 

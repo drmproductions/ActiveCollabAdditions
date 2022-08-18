@@ -73,6 +73,18 @@ export function getProjectIdAndTaskIdFromDocumentLocation() {
 	return { projectId, taskId }
 }
 
+export async function getTaskJobType(task) {
+	const { job_type_id } = task
+	if (job_type_id !== 0) return job_type_id
+	return await preferences.getTimersDefaultJobType()
+}
+
+export async function getUserCanChangeIsBillable({ projectId }) {
+	const project = await cache.getProject({ projectId })
+	return project.members_can_change_billable
+		|| angie.initial_data.settings.default_members_can_change_billable
+}
+
 export function getTimerDuration(timer) {
 	if (!timer) return 0
 	return timer.duration + (timer.running ? (Date.now() - timer.started_at) : 0)
@@ -83,13 +95,6 @@ export function isCurrentUserOwner() {
 }
 
 export async function isTimerInDefaultState(timer) {
-	if (timer.jobTypeId !== undefined) {
-		const defaultJobTypeId = await preferences.getTimersDefaultJobType()
-		if (timer.jobTypeId !== defaultJobTypeId) {
-			return false
-		}
-	}
-
 	if (timer.description) {
 		return false
 	}
@@ -137,18 +142,15 @@ export async function roundDuration(duration) {
 }
 
 export async function submitTimer({ projectId, taskId }) {
+	const task = await cache.getTask({ projectId, taskId })
 	const timer = await db.getTimer(projectId, taskId)
 
 	let billableStatus = timer.isBillable
 	if (typeof billableStatus !== 'boolean') {
-		const res = await cache.getTask({ projectId, taskId })
-		billableStatus = res.is_billable
+		billableStatus = task.is_billable
 	}
 
 	const d = new Date()
-	const recordDate = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
-
-	const jobTypeId = timer.jobTypeId ?? await preferences.getTimersDefaultJobType()
 
 	try {
 		timer.submittingState = 'submitting'
@@ -158,9 +160,13 @@ export async function submitTimer({ projectId, taskId }) {
 
 		await api.postTimeRecord({
 			billable_status: billableStatus,
-			job_type_id: jobTypeId,
+			job_type_id: await getTaskJobType(task),
 			project_id: projectId,
-			record_date: recordDate,
+			record_date: [
+				d.getFullYear(),
+				(d.getMonth() + 1).toString().padStart(2, '0'),
+				d.getDate().toString().padStart(2, '0'),
+			].join('-'),
 			summary: timer.description ?? '',
 			task_id: taskId,
 			user_id: angie.user_session_data.logged_user_id,
@@ -173,5 +179,12 @@ export async function submitTimer({ projectId, taskId }) {
 		delete timer.submittingState
 		await db.updateTimer(timer)
 		// TODO show the error
+	}
+}
+
+export async function updateTask({ projectId, taskId }, updates) {
+	const res = await api.putTask({ projectId, taskId }, updates)
+	if (res.single) {
+		cache.setTask({ projectId, taskId }, res.single)
 	}
 }

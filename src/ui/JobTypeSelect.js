@@ -1,5 +1,4 @@
 import * as ListPopup from './popups/list.js'
-import * as api from '../api.js'
 import * as cache from '../cache.js'
 import { El } from './el.js'
 
@@ -21,8 +20,7 @@ export function JobTypeSelect({ id, projectId, taskId, style }) {
 				placeholder: 'Choose a job type',
 				target: this,
 				async onClick({ id }) {
-					const res = await api.putTask({ projectId, taskId }, { job_type_id: id })
-					cache.setTask({ projectId, taskId }, res.single)
+					await shared.updateTask({ projectId, taskId }, { job_type_id: id })
 					await update()
 					return 'hide'
 				},
