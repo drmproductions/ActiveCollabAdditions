@@ -179,10 +179,3 @@ export async function submitTimer({ projectId, taskId }) {
 		// TODO show the error
 	}
 }
-
-export async function updateTask({ projectId, taskId }, updates) {
-	const res = await api.putTask({ projectId, taskId }, updates)
-	if (res.single) {
-		cache.setTask({ projectId, taskId }, res.single)
-	}
-}

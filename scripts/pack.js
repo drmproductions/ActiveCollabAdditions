@@ -45,7 +45,7 @@ const manifest = {
 	content_scripts: [{
 		matches: ['*://*/*'],
 		js: ['inject.js'],
-		run_at: 'document_end',
+		run_at: 'document_start',
 	}],
 }
 

@@ -7,7 +7,9 @@ const cacheMap = new Map()
 export async function getProject({ projectId }) {
 	return await useCache(`project-${projectId}`, async () => {
 		const res = await api.getProject({ projectId })
-		return res.single
+		const project = res.single
+		setProjectName({ projectId }, project.name)
+		return project
 	})
 }
 
@@ -21,7 +23,9 @@ export async function getProjectName({ projectId }) {
 export async function getTask({ projectId, taskId }) {
 	return await useCache(`task-${projectId}-${taskId}`, async () => {
 		const res = await api.getTask({ projectId, taskId })
-		return res.single
+		const task = res.single
+		setTaskName({ projectId, taskId }, task.name)
+		return task
 	})
 }
 
@@ -45,6 +49,7 @@ export function hasTask({ projectId, taskId }) {
 }
 
 function set(key, value) {
+	// log.i('cache', 'set', key)
 	cacheMap.set(key, value)
 }
 

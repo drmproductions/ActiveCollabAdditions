@@ -1,9 +1,9 @@
 import * as ConfirmPopup from '../popups/confirm.js'
+import * as api from '../../api.js'
 import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
 import * as overlay from '../overlay.js'
-import * as preferences from '../../preferences.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
@@ -264,7 +264,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 		type: 'checkbox',
 		async onChange() {
 			if (await shared.getUserCanChangeIsBillable({ projectId })) {
-				await shared.updateTask({ projectId, taskId }, { is_billable: this.checked })
+				await api.putTask({ projectId, taskId }, { is_billable: this.checked })
 				return
 			}
 			await createOrUpdateTimer(projectId, taskId, {
@@ -300,7 +300,7 @@ export async function show({ projectId, taskId, dialogOptions }) {
 			width: 'fit-content'
 		},
 		async onChange() {
-			await shared.updateTask({ projectId, taskId }, { job_type_id: parseInt(this.value) })
+			await api.putTask({ projectId, taskId }, { job_type_id: parseInt(this.value) })
 		},
 	}, angie.collections.job_types.map(({ id, name }) => {
 		return El('option', { value: id }, name)

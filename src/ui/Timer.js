@@ -72,7 +72,6 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 				started_at: Date.now(),
 				taskId: updatableContext.taskId,
 			})
-			cacher.preloadTasks({ projectId: updatableContext.projectId })
 		}
 
 		// pause other timers

@@ -26,7 +26,30 @@ function unload() {
 	}
 }
 
+function waitForBody() {
+	if (document.body) return
+	return new Promise(resolve => {
+		const mo = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.type !== 'childList') continue
+				for (const node of mutation.addedNodes) {
+					if (node instanceof HTMLBodyElement) {
+						mo.disconnect()
+						resolve()
+						return
+					}
+				}
+			}
+		})
+		mo.observe(document.documentElement, { childList: true })
+	})
+}
+
+onUnload(() => cacher.earlyInit())
+
 utils.call(async () => {
+	await waitForBody()
+
 	// sometimes these aren't loaded when we're injected
 	await onUnload(async () => {
 		async function wait(key) {
@@ -34,11 +57,14 @@ utils.call(async () => {
 				log.w(`waiting for angie.${key}`)
 				await utils.sleep(100)
 			}
+			log.w(`waited for angie.${key}`)
 		}
 		await wait('api_url')
 		await wait('collections')
 		await wait('icons')
 		await wait('user_session_data')
+		// TODO we may only need to wait for this?
+		await wait('all_loaded')
 	})
 
 	await onUnload(() => db.init())
