@@ -87,7 +87,7 @@ function openCount() {
 }
 
 function preventScrolling(e) {
-	if (utils.getScrollParent(e.target) === document.body.parentNode) {
+	if (utils.getScrollParent(e.target) === document.documentElement) {
 		e.preventDefault()
 	}
 }
