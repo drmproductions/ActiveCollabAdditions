@@ -1,5 +1,5 @@
 (() => {
-	const tests = ['activecollab', 'activecollab_csrf', 'angie.api_url']
+	const tests = ['angie', 'angie.api_url', 'angie.initial_data']
 	const scripts = Array.from(document.getElementsByTagName('script'))
 	const isActiveCollabPage = scripts.some(el => tests.some(test => el.innerText.toLowerCase().includes(test)))
 	if (!isActiveCollabPage) return
