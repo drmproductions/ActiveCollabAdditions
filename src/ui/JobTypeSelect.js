@@ -1,5 +1,6 @@
 import * as ListPopup from './popups/list.js'
 import * as cache from '../cache.js'
+import * as shared from '../shared.js'
 import { El } from './el.js'
 
 export function JobTypeSelect({ id, projectId, taskId, style }) {
