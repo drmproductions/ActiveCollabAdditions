@@ -5,6 +5,7 @@ import * as db from './db.js'
 import * as shared from './shared.js'
 import { ChangeProjectMembersButton } from './ui/ChangeProjectMembersButton.js'
 import { El } from './ui/el.js'
+import { JobTypeSelect } from './ui/JobTypeSelect.js'
 import { Timer } from './ui/Timer.js'
 import { useStyle } from './ui/style.js'
 
@@ -28,6 +29,7 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 })
 
 function addFuncs(funcSet, target) {
+	if (target.querySelector('.object_view_sidebar')) funcSet.add(injectJobTypeSelectIntoObjectView)
 	if (shared.isCurrentUserOwner()) {
 		if (target.querySelector('.object_view_sidebar')) funcSet.add(injectChangeProjectMembersButtonIntoObjectView)
 		if (target.querySelector('.task_form')) funcSet.add(injectChangeProjectMembersButtonIntoTaskForm)
@@ -37,6 +39,7 @@ function addFuncs(funcSet, target) {
 }
 
 export function init() {
+	injectJobTypeSelectIntoObjectView()
 	if (shared.isCurrentUserOwner()) {
 		injectChangeProjectMembersButtonIntoObjectView()
 		injectChangeProjectMembersButtonIntoTaskForm()
@@ -141,6 +144,23 @@ function injectTimerIntoTopBar() {
 				break
 		}
 	})
+}
+
+function injectJobTypeSelectIntoObjectView() {
+	const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
+	if (!propertyEl) return
+
+	const { parentNode } = propertyEl
+
+	const id = 'acit-job-type-select-modal'
+	if (parentNode.querySelector(`.${id}`)) return
+
+	const ids = shared.getProjectIdAndTaskIdFromDocumentLocation()
+	if (!ids) return
+	const { projectId, taskId } = ids
+
+	const selectEl = JobTypeSelect({ id, projectId, taskId })
+	parentNode.insertBefore(selectEl, propertyEl)
 }
 
 function injectChangeProjectMembersButtonIntoObjectView() {

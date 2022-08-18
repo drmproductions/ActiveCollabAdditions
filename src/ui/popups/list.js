@@ -13,7 +13,9 @@ function Body(children) {
 	}, children)
 }
 
-function Filter({ placeholder, onFilter }) {
+function Filter({ placeholder, onFilter, onKeyDown }) {
+	const keys = ['ArrowDown', 'ArrowUp', 'Enter']
+
 	const inputEl = El('input', {
 		placeholder: placeholder ?? 'Filter...',
 		style: {
@@ -28,8 +30,15 @@ function Filter({ placeholder, onFilter }) {
 			paddingTop: 4,
 		},
 		type: 'text',
-		onKeyUp() {
-			onFilter?.(this.value)
+		onKeyDown(e) {
+			if (keys.includes(e.key)) {
+				onKeyDown(e.key)
+			}
+		},
+		onKeyUp(e) {
+			if (!keys.includes(e.key)) {
+				onFilter(this.value)
+			}
 		},
 	})
 
@@ -57,8 +66,9 @@ function List(children) {
 	}, children)
 }
 
-function ListItem({ onClick }, children) {
+function ListItem({ id, onClick }, children) {
 	return El('div', {
+		dataset: { id },
 		type: 'text',
 		style: {
 			alignItems: 'center',
@@ -70,6 +80,9 @@ function ListItem({ onClick }, children) {
 			height: 28,
 			paddingLeft: 15,
 			paddingRight: 15,
+			'.highlighted': {
+				backgroundColor: 'var(--color-theme-200)',
+			},
 			':hover': {
 				backgroundColor: 'var(--color-theme-200)',
 			},
@@ -97,12 +110,40 @@ export function show({
 				filter(value)
 				draw()
 			},
+			onKeyDown(key) {
+				switch (key) {
+					case 'ArrowDown':
+						shiftHighlight(1)
+						break
+					case 'ArrowUp':
+						shiftHighlight(-1)
+						break
+					case 'Enter':
+						const highlightedEl = Array.from(listEl.children)
+							.find(x => x.classList.contains('highlighted'))
+						if (highlightedEl) highlightedEl.click()
+						break
+				}
+			},
 		}),
 		listEl,
 	])
 
+	function getHighlightedIndex() {
+		const el = Array.from(listEl.children).find(x => x.classList.contains('highlighted'))
+		if (!el) {
+			const index = filteredItems.findIndex(x => x.checked)
+			return index === -1 ? 0 : index
+		}
+		const id = parseInt(el.dataset.id)
+		const index = filteredItems.findIndex(x => x.id === id)
+		return index === -1 ? 0 : index
+	}
+
 	function draw() {
-		const els = filteredItems.map((item) => {
+		const highlightedIndex = getHighlightedIndex()
+
+		const els = filteredItems.map((item, index) => {
 			const { id, text, checked, imageSrc } = item
 			const children = []
 
@@ -117,31 +158,30 @@ export function show({
 
 			children.push(text)
 
-			if (multi) {
-				children.push(El('svg', {
-					width: 16,
-					height: 16,
-					viewBox: '0 0 16 16',
-					fill: 'transparent',
-					style: {
-						marginLeft: 'auto',
-					},
-				}, [
-					El('g', { fillRule: 'evenodd' }, [
-						El('circle', {
-							stroke: checked ? 'var(--color-secondary)' : 'var(--color-theme-500)',
-							cx: 8, cy: 8, r: 7.5,
-						}),
-						El('circle', {
-							style: { transform: `scale(${ checked ? 1 : 0 })` },
-							fill: 'var(--color-secondary)',
-							cx: 8, cy: 8, r: 5,
-						}),
-					]),
-				]))
-			}
+			children.push(El('svg', {
+				width: 16,
+				height: 16,
+				viewBox: '0 0 16 16',
+				fill: 'transparent',
+				style: {
+					marginLeft: 'auto',
+				},
+			}, [
+				El('g', { fillRule: 'evenodd' }, [
+					El('circle', {
+						stroke: checked ? 'var(--color-secondary)' : 'var(--color-theme-500)',
+						cx: 8, cy: 8, r: 7.5,
+					}),
+					El('circle', {
+						style: { transform: `scale(${checked ? 1 : 0})` },
+						fill: 'var(--color-secondary)',
+						cx: 8, cy: 8, r: 5,
+					}),
+				]),
+			]))
 
-			return ListItem({
+			const el = ListItem({
+				id,
 				async onClick() {
 					const action = await onClick({ id, checked })
 					switch (action) {
@@ -149,6 +189,12 @@ export function show({
 							overlay.hide('list')
 							break
 						case 'toggle':
+							if (!multi) {
+								for (const otherItem of items) {
+									if (otherItem === item) continue
+									otherItem.checked = false
+								}
+							}
 							item.checked = !item.checked
 							draw()
 							break
@@ -157,13 +203,38 @@ export function show({
 					}
 				},
 			}, children)
+
+			if (index === highlightedIndex) {
+				el.classList.add('highlighted')
+			}
+
+			return el
 		})
+
 		setChildren(listEl, els)
 	}
 
 	function filter(filterText) {
 		filterText = filterText.toLowerCase()
 		filteredItems = items.filter(({ text }) => text.toLowerCase().includes(filterText))
+	}
+
+	function shiftHighlight(delta) {
+		const children = Array.from(listEl.children)
+		const { length } = children
+		if (length === 0) return
+
+		const oldIndex = children.findIndex(x => x.classList.contains('highlighted'))
+		if (oldIndex === -1) {
+			children[0].classList.add('highlighted')
+			return
+		}
+
+		children[oldIndex].classList.remove('highlighted')
+
+		let newIndex = (oldIndex + delta) % length
+		if (newIndex < 0) newIndex = length + newIndex
+		children[newIndex].classList.add('highlighted')
 	}
 
 	async function update() {

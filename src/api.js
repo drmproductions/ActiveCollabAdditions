@@ -1,11 +1,17 @@
-export async function deleteProjectMember({ projectId, memberId }) {
-	const res = await fetch(`${angie.api_url}/projects/${projectId}/members/${memberId}`, {
-		method: 'DELETE',
+function getAuthFields() {
+	return {
 		credentials: 'include',
 		headers: {
 			'Content-Type': 'application/json',
 			'X-Angie-CsrfValidator': window.getCsrfCookie(),
 		},
+	}
+}
+
+export async function deleteProjectMember({ projectId, memberId }) {
+	const res = await fetch(`${angie.api_url}/projects/${projectId}/members/${memberId}`, {
+		...getAuthFields(),
+		method: 'DELETE',
 	})
 	return await res.json()
 }
@@ -43,12 +49,8 @@ export async function getTasks({ projectId }) {
 
 export async function postProjectMember({ projectId, memberId }) {
 	const res = await fetch(`${angie.api_url}/projects/${projectId}/members`, {
+		...getAuthFields(),
 		method: 'POST',
-		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json',
-			'X-Angie-CsrfValidator': window.getCsrfCookie(),
-		},
 		body: JSON.stringify([memberId]),
 	})
 	return await res.json()
@@ -56,12 +58,17 @@ export async function postProjectMember({ projectId, memberId }) {
 
 export async function postTimeRecord(payload) {
 	const res = await fetch(`${angie.api_url}/projects/${payload.project_id}/time-records`, {
+		...getAuthFields(),
 		method: 'POST',
-		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json',
-			'X-Angie-CsrfValidator': window.getCsrfCookie(),
-		},
+		body: JSON.stringify(payload),
+	})
+	return await res.json()
+}
+
+export async function putTask({ projectId, taskId }, payload) {
+	const res = await fetch(`${angie.api_url}/projects/${projectId}/tasks/${taskId}`, {
+		...getAuthFields(),
+		method: 'PUT',
 		body: JSON.stringify(payload),
 	})
 	return await res.json()
