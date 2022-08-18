@@ -19,7 +19,7 @@ export function ChangeProjectMembersButton({ id, projectId, style }) {
 		async onClick() {
 			await ListPopup.show({
 				multi: true,
-				placeholder: 'Filter users...',
+				placeholder: 'Choose members',
 				target: this,
 				async onClick({ id: memberId, checked }) {
 					try {
