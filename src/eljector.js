@@ -204,7 +204,7 @@ function injectChangeProjectMembersButtonIntoTaskForm() {
 	siblingEl.parentNode.appendChild(buttonEl)
 }
 
-function injectTimerIntoTaskModal() {
+async function injectTimerIntoTaskModal() {
 	let el
 
 	const headerEl = document.body.querySelector('h1.task-modal-header')
@@ -229,6 +229,9 @@ function injectTimerIntoTaskModal() {
 	cache.setProjectName({ projectId }, projectName)
 	cache.setTaskName({ projectId, taskId }, taskName)
 
+	const project = await cache.getProject({ projectId })
+	if (!project.is_tracking_enabled) return
+
 	optionsEl.prepend(Timer({
 		menuButtonOptions: { alwaysVisible: true },
 		style: {
@@ -239,7 +242,7 @@ function injectTimerIntoTaskModal() {
 	}))
 }
 
-function injectTimersIntoTaskViewTasks() {
+async function injectTimersIntoTaskViewTasks() {
 	for (const taskEl of document.body.querySelectorAll('div.task_view_mode')) {
 		const taskNameEl = taskEl.querySelector('.task_name')
 		if (!taskNameEl) continue
@@ -259,6 +262,9 @@ function injectTimersIntoTaskViewTasks() {
 		if (isNaN(projectId) || isNaN(taskId)) continue
 
 		cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
+
+		const project = await cache.getProject({ projectId })
+		if (!project.is_tracking_enabled) continue
 
 		taskEl.prepend(Timer({
 			style: {
