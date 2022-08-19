@@ -52,41 +52,45 @@ export async function getTasks({ projectId }) {
 }
 
 export function init() {
-	window.acaInterceptRequest = async (target, self, resource, options, ...rest) => {
-		const performFuncs = []
+	window.fetch = new Proxy(window.fetch, {
+		async apply(target, self, args) {
+			const [resource, options, ...rest] = args
 
-		if (resource) {
-			try {
-				const url = new URL(resource)
-				const method = (options?.method ?? 'get').toLowerCase()
-				const onPerform = (func) => performFuncs.push(func)
-				for (const { handler, regex } of interceptors) {
-					const matches = url.pathname.match(regex)
-					if (!matches) continue
-					await handler({ url, matches, method, options, onPerform })
+			const performFuncs = []
+
+			if (resource) {
+				try {
+					const url = new URL(resource)
+					const method = (options?.method ?? 'get').toLowerCase()
+					const onPerform = (func) => performFuncs.push(func)
+					for (const { handler, regex } of interceptors) {
+						const matches = url.pathname.match(regex)
+						if (!matches) continue
+						await handler({ url, matches, method, options, onPerform })
+					}
+				}
+				catch (e) {
+					log.e('api', e)
 				}
 			}
-			catch (e) {
-				log.e('api', e)
-			}
-		}
 
-		const res = await target.call(self, resource, options, ...rest)
+			const res = await target.call(self, resource, options, ...rest)
 
-		if (performFuncs.length > 0) {
-			const value = await (res.clone()).json()
-			try {
-				for (const resolve of performFuncs) {
-					await resolve(value)
+			if (performFuncs.length > 0) {
+				const value = await(res.clone()).json()
+				try {
+					for (const resolve of performFuncs) {
+						await resolve(value)
+					}
+				}
+				catch (e) {
+					log.e('api', e)
 				}
 			}
-			catch (e) {
-				log.e('api', e)
-			}
-		}
 
-		return res
-	}
+			return res
+		},
+	})
 }
 
 export function intercept(regex, handler) {
