@@ -17,7 +17,9 @@ try { fs.mkdirSync('out') } catch {}
 try { fs.mkdirSync(`out/${target}`) } catch {}
 try { fs.mkdirSync(outDir) } catch {}
 
+fs.copyFileSync('www/background.js', `${outDir}/background.js`)
 fs.copyFileSync('www/inject.js', `${outDir}/inject.js`)
+fs.copyFileSync('www/interceptor.js', `${outDir}/interceptor.js`)
 fs.copyFileSync('www/bundle.js', `${outDir}/bundle.js`)
 fs.mkdirSync(`${outDir}/icons`)
 for (const filename of iconFilenames) {
@@ -56,6 +58,12 @@ switch (target) {
 			resources: ['bundle.js'],
 			matches: ['*://*/*'],
 		}]
+		// the following are needed to ensure our fetch request interception always works
+		manifest.background = {
+			service_worker: 'background.js',
+		}
+		manifest.host_permissions = ['*://*/*']
+		manifest.permissions = ['scripting']
 		break
 	case 'firefox':
 		manifest.manifest_version = 2

@@ -28,9 +28,7 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks)$/, async ({ method, options }) =>
 	catch {}
 })
 
-// NOTE this doesn't handle the fact that setting a time estimation to zero clears the
 api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, method, options }) => {
-	console.log('put', method, options)
 	if (method !== 'put') return
 	if (typeof options.body !== 'string') return
 
@@ -45,20 +43,23 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, me
 		const body = JSON.parse(options.body)
 
 		if (typeof jobTypeId === 'number') {
-			body.job_type_id = id
+			body.job_type_id = jobTypeId
 		}
 
-		// when estimate === '0' the job_type_id gets cleared by the backend (even if we pass to it)
+		// when estimate === '0' the job_type_id gets cleared by the backend
 		// so lets prevent an unchanged estimate from clearing the job_type_id
+		// NOTE this doesn't handle the fact that setting a time estimation to zero clears the job type.
+		//      we'd probably need to make another request to put it back to it's previous value, but I
+		//      was told clearing a time estimation is a pretty rare event
 		if (typeof body.estimate === 'string') {
-			console.log('here?')
-			const projectId = parseInt(matches[2])
-			const taskId = parseInt(matches[5])
-			const task = await cache.getTask({ projectId, taskId })
-			console.log(task.estimate, body.estimate)
-			if (task.estimate === body.estimate) {
-				console.log('estimate unchanged, removing from request')
-				delete body.estimate
+			const estimate = parseInt(body.estimate)
+			if (!isNaN(estimate)) {
+				const projectId = parseInt(matches[2])
+				const taskId = parseInt(matches[5])
+				const task = await cache.getTask({ projectId, taskId })
+				if (task.estimate === estimate) {
+					delete body.estimate
+				}
 			}
 		}
 

@@ -52,49 +52,40 @@ export async function getTasks({ projectId }) {
 }
 
 export function init() {
-	const windowFetchRevocableProxy = Proxy.revocable(window.fetch, {
-		apply: async (target, self, args) => {
-			const [resource, options, ...rest] = args
+	window.acaInterceptRequest = async (target, self, resource, options, ...rest) => {
+		const performFuncs = []
 
-			const performFuncs = []
-
-			if (resource) {
-				try {
-					const url = new URL(resource)
-					const method = (options?.method ?? 'get').toLowerCase()
-					const onPerform = (func) => performFuncs.push(func)
-					for (const { handler, regex } of interceptors) {
-						const matches = url.pathname.match(regex)
-						if (!matches) continue
-						await handler({ url, matches, method, options, onPerform })
-					}
-				}
-				catch (e) {
-					log.e('api', e)
+		if (resource) {
+			try {
+				const url = new URL(resource)
+				const method = (options?.method ?? 'get').toLowerCase()
+				const onPerform = (func) => performFuncs.push(func)
+				for (const { handler, regex } of interceptors) {
+					const matches = url.pathname.match(regex)
+					if (!matches) continue
+					await handler({ url, matches, method, options, onPerform })
 				}
 			}
+			catch (e) {
+				log.e('api', e)
+			}
+		}
 
-			const res = await target.call(self, resource, options, ...rest)
+		const res = await target.call(self, resource, options, ...rest)
 
-			if (performFuncs.length > 0) {
-				const value = await (res.clone()).json()
-				try {
-					for (const resolve of performFuncs) {
-						await resolve(value)
-					}
-				}
-				catch (e) {
-					log.e('api', e)
+		if (performFuncs.length > 0) {
+			const value = await (res.clone()).json()
+			try {
+				for (const resolve of performFuncs) {
+					await resolve(value)
 				}
 			}
+			catch (e) {
+				log.e('api', e)
+			}
+		}
 
-			return res
-		},
-	})
-	window.fetch = windowFetchRevocableProxy.proxy
-
-	return () => {
-		windowFetchRevocableProxy.revoke()
+		return res
 	}
 }
 
