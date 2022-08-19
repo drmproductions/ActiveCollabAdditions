@@ -1,3 +1,5 @@
+// SEE https://bugs.chromium.org/p/chromium/issues/detail?id=634381
+// we need to load the script early, otherwise our fetch proxy stuff doesn't work
 (() => {
 	const _browser = globalThis.chrome || globalThis.browser
 
