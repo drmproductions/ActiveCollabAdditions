@@ -49,7 +49,6 @@ export function hasTask({ projectId, taskId }) {
 }
 
 function set(key, value) {
-	// log.i('cache', 'set', key)
 	cacheMap.set(key, value)
 }
 

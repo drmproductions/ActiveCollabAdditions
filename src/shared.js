@@ -31,21 +31,26 @@ export function getCurrentUser() {
 	return angie.user_session_data.users.find(x => x.id === id)
 }
 
-export function getProjectIdFromUrl(url) {
-	let matches, projectId
+export function getProjectIdAndMaybeTaskIdFromUrl(url) {
+	let matches, projectId, taskId
 
 	if (matches = url.search.match(/\?modal=Task-([0-9]*)-([0-9]*)/)) {
 		projectId = matches[2]
+		taskId = matches[1]
 	}
 	else if (matches = url.pathname.match(/(projects\/)([0-9]*)/)) {
 		projectId = matches[2]
 	}
 
 	projectId = parseInt(projectId)
-
 	if (isNaN(projectId)) return
 
-	return { projectId }
+	if (taskId) {
+		taskId = parseInt(taskId)
+		if (isNaN(taskId)) return
+	}
+
+	return { projectId, taskId }
 }
 
 export function getProjectIdAndTaskIdFromUrl(url) {
@@ -61,9 +66,9 @@ export function getProjectIdAndTaskIdFromUrl(url) {
 	}
 
 	projectId = parseInt(projectId)
-	taskId = parseInt(taskId)
-
 	if (isNaN(projectId)) return
+
+	taskId = parseInt(taskId)
 	if (isNaN(taskId)) return
 
 	return { projectId, taskId }

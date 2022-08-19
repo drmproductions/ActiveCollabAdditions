@@ -1,4 +1,5 @@
 import * as TimersDialog from './ui/dialogs/timers.js'
+import * as api from './api.js'
 import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
@@ -9,16 +10,62 @@ import { JobTypeSelect } from './ui/JobTypeSelect.js'
 import { Timer } from './ui/Timer.js'
 import { useStyle } from './ui/style.js'
 
-document.body.classList.add(useStyle({
-	// decrease project header max width to account for our injected elements
-	' .project-header': {
-		width: 'calc(100% - 344px) !important',
-		// this is an unnecessary div that causes layout issues
-		' > .tw-w-32.tw-h-full': {
-			display: 'none',
-		},
-	},
-}))
+api.intercept(/(projects\/)([0-9]*)(\/)(tasks)$/, async ({ method, options }) => {
+	if (method !== 'post') return
+	if (typeof options.body !== 'string') return
+
+	const el = getTopMostInlineJobTypeSelectElement()
+	if (!el) return
+
+	const id = parseInt(el.dataset.jobTypeId)
+	if (!id) return
+
+	try {
+		const body = JSON.parse(options.body)
+		body.job_type_id = id
+		options.body = JSON.stringify(body)
+	}
+	catch {}
+})
+
+// NOTE this doesn't handle the fact that setting a time estimation to zero clears the
+api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, method, options }) => {
+	console.log('put', method, options)
+	if (method !== 'put') return
+	if (typeof options.body !== 'string') return
+
+	let jobTypeId
+	const el = getTopMostInlineJobTypeSelectElement()
+	if (el) {
+		jobTypeId = parseInt(el.dataset.jobTypeId)
+		if (isNaN(jobTypeId)) jobTypeId = undefined
+	}
+
+	try {
+		const body = JSON.parse(options.body)
+
+		if (typeof jobTypeId === 'number') {
+			body.job_type_id = id
+		}
+
+		// when estimate === '0' the job_type_id gets cleared by the backend (even if we pass to it)
+		// so lets prevent an unchanged estimate from clearing the job_type_id
+		if (typeof body.estimate === 'string') {
+			console.log('here?')
+			const projectId = parseInt(matches[2])
+			const taskId = parseInt(matches[5])
+			const task = await cache.getTask({ projectId, taskId })
+			console.log(task.estimate, body.estimate)
+			if (task.estimate === body.estimate) {
+				console.log('estimate unchanged, removing from request')
+				delete body.estimate
+			}
+		}
+
+		options.body = JSON.stringify(body)
+	}
+	catch {}
+})
 
 const showTimerWhenHoveringOverTaskClassName = useStyle({
 	':hover': {
@@ -54,7 +101,28 @@ function addFuncs(funcSet, target) {
 	}
 }
 
+function getTopMostInlineJobTypeSelectElement() {
+	let els = Array.from(document.body.querySelectorAll('.acit-job-type-select-inline'))
+	els = els.filter(el => {
+		const rect = el.getBoundingClientRect()
+		return document.elementFromPoint(rect.left, rect.top) === el
+	})
+	if (els.length !== 1) return
+	return els[0]
+}
+
 export function init() {
+	document.body.classList.add(useStyle({
+		// decrease project header max width to account for our injected elements
+		' .project-header': {
+			width: 'calc(100% - 344px) !important',
+			// this is an unnecessary div that causes layout issues
+			' > .tw-w-32.tw-h-full': {
+				display: 'none',
+			},
+		},
+	}))
+
 	injectJobTypeSelectIntoObjectView()
 	injectJobTypeSelectIntoTaskForm()
 	if (shared.isCurrentUserOwner()) {
@@ -178,37 +246,38 @@ function injectJobTypeSelectIntoObjectView() {
 
 	parentNode.insertBefore(El('div.object_view_property', [
 		El('label', 'Job Type'),
-		JobTypeSelect({ id, projectId, taskId }),
+		JobTypeSelect({ id, projectId, taskId, realtime: true }),
 	]), propertyEl)
 }
 
 function injectJobTypeSelectIntoTaskForm() {
-	const wrapperEl = document.body.querySelector('div.project_tasks_add_wrapper')
-	if (!wrapperEl) return
+	for (const wrapperEl of document.body.querySelectorAll('div.task_form')) {
+		const id = 'acit-job-type-select-inline'
+		if (wrapperEl.querySelector(`.${id}`)) continue
 
-	const id = 'acit-job-type-select-inline'
-	if (wrapperEl.querySelector(`.${id}`)) return
+		const siblingEl = wrapperEl.querySelector('div.select_assignee_new_popover')
+		if (!siblingEl) continue
 
-	const siblingEl = document.body.querySelector('div.select_assignee_new_popover')
-	if (!siblingEl) return
+		const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
+		if (!ids) continue
+		const { projectId, taskId } = ids
 
-	const ids = shared.getProjectIdFromUrl(document.location)
-	if (!ids) return
-	const { projectId } = ids
-
-	siblingEl.parentNode.parentNode.insertBefore(El('div.form_field', [
-		El('label', 'Job Type'),
-		JobTypeSelect({
-			id,
-			projectId,
-			style: {
-				fontSize: 13,
-				fontWeight: 'inherit',
-				minHeight: 'unset',
-				textDecoration: 'underline',
-			},
-		}),
-	]), siblingEl.parentNode)
+		siblingEl.parentNode.parentNode.insertBefore(El('div.form_field', [
+			El('label', 'Job Type'),
+			JobTypeSelect({
+				id,
+				projectId,
+				taskId,
+				realtime: false,
+				style: {
+					fontSize: 13,
+					fontWeight: 'inherit',
+					minHeight: 'unset',
+					textDecoration: 'underline',
+				},
+			}),
+		]), siblingEl.parentNode)
+	}
 }
 
 function injectChangeProjectMembersButtonIntoObjectView() {
@@ -218,7 +287,7 @@ function injectChangeProjectMembersButtonIntoObjectView() {
 	const id = 'acit-change-project-members-button-modal'
 	if (propertyEl.querySelector(`.${id}`)) return
 
-	const ids = shared.getProjectIdFromUrl(document.location)
+	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId } = ids
 
@@ -227,7 +296,7 @@ function injectChangeProjectMembersButtonIntoObjectView() {
 }
 
 function injectChangeProjectMembersButtonIntoTaskForm() {
-	const wrapperEl = document.body.querySelector('div.project_tasks_add_wrapper')
+	const wrapperEl = document.body.querySelector('div.task_form')
 	if (!wrapperEl) return
 
 	const id = 'acit-change-project-members-button-inline'
@@ -236,7 +305,7 @@ function injectChangeProjectMembersButtonIntoTaskForm() {
 	const siblingEl = document.body.querySelector('div.select_assignee_new_popover')
 	if (!siblingEl) return
 
-	const ids = shared.getProjectIdFromUrl(document.location)
+	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId } = ids
 

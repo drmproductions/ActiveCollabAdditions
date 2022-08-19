@@ -3,8 +3,7 @@ import * as utils from '../utils.js'
 const numberToPixelsExcludedNames = ['flex-basis', 'flex-grow', 'flex-shrink', 'font-weight', 'line-height', 'opacity', 'scale', 'z-index']
 const styleEl = document.createElement('style')
 const styleMap = new Map()
-
-document.head.appendChild(styleEl)
+const pendingRules = []
 
 export function formatNumberToPixels(name, value) {
 	if (typeof value !== 'number') return value
@@ -19,6 +18,23 @@ function get(def) {
 	name = `generated_rule_${styleMap.size}`
 	styleMap.set(key, name)
 	return [name, true]
+}
+
+function insertRule(rule) {
+	if (styleEl.sheet) {
+		styleEl.sheet.insertRule(rule, 0)
+	}
+	else {
+		pendingRules.push(rule)
+	}
+}
+
+export function init() {
+	document.head.appendChild(styleEl)
+	for (const pendingRule of pendingRules) {
+		styleEl.sheet.insertRule(pendingRule, 0)
+	}
+	pendingRules.length = 0
 }
 
 export function useAnimation(def) {
@@ -41,7 +57,7 @@ export function useAnimation(def) {
 	chunks.push('}')
 
 	const css = chunks.join('')
-	styleEl.sheet.insertRule(css, 0)
+	insertRule(css)
 
 	return name
 }
@@ -71,7 +87,7 @@ export function useStyle(def) {
 
 	for (const { chunks } of rules) {
 		const css = chunks.join('')
-		styleEl.sheet.insertRule(css, 0)
+		insertRule(css)
 	}
 	return name
 }

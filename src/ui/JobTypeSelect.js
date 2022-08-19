@@ -3,7 +3,7 @@ import * as api from '../api.js'
 import * as cache from '../cache.js'
 import { El } from './el.js'
 
-export function JobTypeSelect({ id, projectId, taskId, style }) {
+export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 	const el = El(`div.${id}`, {
 		style: {
 			color: 'var(--color-secondary)',
@@ -21,7 +21,7 @@ export function JobTypeSelect({ id, projectId, taskId, style }) {
 				placeholder: 'Choose a job type',
 				target: this,
 				async onClick({ id }) {
-					if (taskId) {
+					if (realtime && taskId) {
 						await api.putTask({ projectId, taskId }, { job_type_id: id })
 					}
 					await update(id)
@@ -46,12 +46,14 @@ export function JobTypeSelect({ id, projectId, taskId, style }) {
 
 	async function update(jobTypeId) {
 		if (taskId) {
-			const task = await cache.getTask({ projectId, taskId })
-			jobTypeId = task.job_type_id
+			if (realtime || !jobTypeId) {
+				const task = await cache.getTask({ projectId, taskId })
+				jobTypeId = task.job_type_id
+			}
 		}
 		const jobType = angie.user_session_data.job_types.find(x => x.id === jobTypeId)
 		el.innerText = jobType?.name ?? 'No Job Type...'
-		el.dataset.jobTypeId = jobType?.id ?? 0
+		el.dataset.jobTypeId = jobTypeId ?? 0
 	}
 
 	update()

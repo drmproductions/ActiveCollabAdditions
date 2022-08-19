@@ -1,11 +1,13 @@
 import * as PreferencesDialog from './ui/dialogs/preferences.js'
 import * as TimersDialog from './ui/dialogs/timers.js'
+import * as api from './api.js'
 import * as bus from './bus.js'
 import * as cacher from './cacher.js'
 import * as db from './db.js'
 import * as eljector from './eljector.js'
 import * as log from './log.js'
 import * as meta from './meta.json'
+import * as style from './ui/style.js'
 import * as theme from './theme.js'
 import * as utils from './utils.js'
 
@@ -45,19 +47,18 @@ function waitForBody() {
 	})
 }
 
-onUnload(() => cacher.earlyInit())
+api.init()
 
 utils.call(async () => {
 	await waitForBody()
+	onUnload(() => style.init())
 
 	// sometimes these aren't loaded when we're injected
 	await onUnload(async () => {
 		async function wait(key) {
 			while (!angie[key]) {
-				log.w(`waiting for angie.${key}`)
 				await utils.sleep(100)
 			}
-			log.w(`waited for angie.${key}`)
 		}
 		await wait('api_url')
 		await wait('collections')
