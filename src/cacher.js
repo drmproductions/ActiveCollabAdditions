@@ -42,8 +42,8 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ method, onP
 api.intercept(/(projects\/)([0-9]*)(\/)(tasks)$/, async ({ method, onPerform }) => {
 	if (method !== 'get' && method !== 'put') return
 	onPerform(async (value) => {
-		if (!Array.isArray(value)) return
-		for (const task of value) {
+		if (!Array.isArray(value.tasks)) return
+		for (const task of value.tasks) {
 			cache.setTask({ projectId: task.project_id, taskId: task.id }, task)
 		}
 	})
