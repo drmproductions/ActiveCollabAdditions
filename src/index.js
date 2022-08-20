@@ -4,7 +4,7 @@ import * as api from './api.js'
 import * as bus from './bus.js'
 import * as cacher from './cacher.js'
 import * as db from './db.js'
-import * as eljector from './eljector.js'
+import * as injector from './injector.js'
 import * as log from './log.js'
 import * as meta from './meta.json'
 import * as style from './ui/style.js'
@@ -72,7 +72,7 @@ utils.call(async () => {
 
 	onUnload(() => bus.init())
 	onUnload(() => cacher.init())
-	onUnload(() => eljector.init())
+	onUnload(() => injector.init())
 	onUnload(() => theme.init())
 
 	onUnload(() => utils.setInterval(() => {
