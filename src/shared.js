@@ -31,7 +31,7 @@ export function formatDuration(duration = 0, separator = ':', includeSeconds = T
 
 export function getCurrentUser() {
 	const id = angie.user_session_data.logged_user_id
-	return angie.user_session_data.users.find(x => x.id === id)
+	return angie.collections.users.find(x => x.id === id)
 }
 
 export function getProjectIdAndMaybeTaskIdFromUrl(url) {

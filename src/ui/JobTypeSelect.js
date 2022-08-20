@@ -34,7 +34,7 @@ export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 						jobTypeId = task.job_type_id
 					}
 					if (isNaN(jobTypeId)) jobTypeId = 0
-					let jobTypes = angie.user_session_data.job_types.filter(x => !x.is_archived)
+					let jobTypes = angie.collections.job_types.filter(x => !x.is_archived)
 					jobTypes.unshift({ id: 0, name: 'No Job Type...' })
 					jobTypes = jobTypes.map(({ id, name: text }) =>
 						({ id, text, checked: id === jobTypeId }))
@@ -51,7 +51,7 @@ export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 				jobTypeId = task.job_type_id
 			}
 		}
-		const jobType = angie.user_session_data.job_types.find(x => x.id === jobTypeId)
+		const jobType = angie.collections.job_types.find(x => x.id === jobTypeId)
 		el.innerText = jobType?.name ?? 'No Job Type...'
 		el.dataset.jobTypeId = jobTypeId ?? 0
 	}

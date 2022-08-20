@@ -37,7 +37,7 @@ export function ChangeProjectMembersButton({ id, projectId, style }) {
 				async onUpdate() {
 					const project = await cache.getProject({ projectId })
 					const membersSet = new Set(project.members)
-					const users = angie.user_session_data.users.filter(x => !x.is_archived)
+					const users = angie.collections.users.filter(x => !x.is_archived)
 					users.sort((a, b) => a.display_name.localeCompare(b.display_name))
 					return users.map(({ id, display_name: text, avatar_url: imageSrc }) =>
 						({ id, text, checked: membersSet.has(id), imageSrc }))

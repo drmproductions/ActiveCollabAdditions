@@ -36,7 +36,7 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 					}
 					const project = await cache.getProject({ projectId })
 					const membersSet = new Set(project.members)
-					const users = angie.user_session_data.users.filter(x => membersSet.has(x.id))
+					const users = angie.collections.users.filter(x => membersSet.has(x.id))
 					users.sort((a, b) => a.display_name.localeCompare(b.display_name))
 					users.unshift({ id: 0, display_name: 'No Assignee...' })
 					return users.map(({ id, display_name: text, avatar_url: imageSrc }) =>
@@ -53,7 +53,7 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 				assigneeId = task.assignee_id
 			}
 		}
-		const user = angie.user_session_data.users.find(x => x.id === assigneeId)
+		const user = angie.collections.users.find(x => x.id === assigneeId)
 		el.innerText = user?.display_name ?? 'No Assignee...'
 		el.dataset.assigneeId = assigneeId ?? 0
 	}
