@@ -1,6 +1,5 @@
 import * as TimerDialog from './dialogs/timer.js'
 import * as bus from '../bus.js'
-import * as cacher from '../cacher.js'
 import * as db from '../db.js'
 import * as shared from '../shared.js'
 import { El } from './el.js'
