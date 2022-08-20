@@ -4,6 +4,7 @@ import * as bus from './bus.js'
 import * as cache from './cache.js'
 import * as db from './db.js'
 import * as shared from './shared.js'
+import { AssigneeSelect } from './ui/AssigneeSelect.js'
 import { ChangeProjectMembersButton } from './ui/ChangeProjectMembersButton.js'
 import { El } from './ui/el.js'
 import { JobTypeSelect } from './ui/JobTypeSelect.js'
@@ -14,15 +15,16 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks)$/, async ({ method, options }) =>
 	if (method !== 'post') return
 	if (typeof options.body !== 'string') return
 
-	const el = getTopMostInlineJobTypeSelectElement()
-	if (!el) return
-
-	const id = parseInt(el.dataset.jobTypeId)
-	if (!id) return
-
 	try {
 		const body = JSON.parse(options.body)
-		body.job_type_id = id
+		const assigneeId = shared.getTopMostElementDataSetId('acit-assignee-select-inline', 'assigneeId')
+		if (assigneeId !== undefined) {
+			body.assignee_id = assigneeId
+		}
+		const jobTypeId = shared.getTopMostElementDataSetId('acit-job-type-select-inline', 'jobTypeId')
+		if (jobTypeId !== undefined) {
+			body.job_type_id = jobTypeId
+		}
 		options.body = JSON.stringify(body)
 	}
 	catch {}
@@ -33,7 +35,7 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, me
 	if (typeof options.body !== 'string') return
 
 	let jobTypeId
-	const el = getTopMostInlineJobTypeSelectElement()
+	const el = shared.getTopMostElement('acit-job-type-select-inline')
 	if (el) {
 		jobTypeId = parseInt(el.dataset.jobTypeId)
 		if (isNaN(jobTypeId)) jobTypeId = undefined
@@ -78,6 +80,7 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 
 function addFuncs(funcSet, target) {
 	if (target.querySelector('.object_view_sidebar')) {
+		funcSet.add(injectAssigneeSelectIntoObjectView)
 		funcSet.add(injectJobTypeSelectIntoObjectView)
 
 		if (shared.isCurrentUserOwner()) {
@@ -86,6 +89,7 @@ function addFuncs(funcSet, target) {
 	}
 
 	if (target.querySelector('.task_form')) {
+		funcSet.add(injectAssigneeSelectIntoTaskForm)
 		funcSet.add(injectJobTypeSelectIntoTaskForm)
 
 		if (shared.isCurrentUserOwner()) {
@@ -102,16 +106,6 @@ function addFuncs(funcSet, target) {
 	}
 }
 
-function getTopMostInlineJobTypeSelectElement() {
-	let els = Array.from(document.body.querySelectorAll('.acit-job-type-select-inline'))
-	els = els.filter(el => {
-		const rect = el.getBoundingClientRect()
-		return document.elementFromPoint(rect.left, rect.top) === el
-	})
-	if (els.length !== 1) return
-	return els[0]
-}
-
 export function init() {
 	document.body.classList.add(useStyle({
 		// decrease project header max width to account for our injected elements
@@ -124,6 +118,8 @@ export function init() {
 		},
 	}))
 
+	injectAssigneeSelectIntoObjectView()
+	injectAssigneeSelectIntoTaskForm()
 	injectJobTypeSelectIntoObjectView()
 	injectJobTypeSelectIntoTaskForm()
 	if (shared.isCurrentUserOwner()) {
@@ -252,18 +248,19 @@ function injectJobTypeSelectIntoObjectView() {
 }
 
 function injectJobTypeSelectIntoTaskForm() {
-	for (const wrapperEl of document.body.querySelectorAll('div.task_form')) {
-		const id = 'acit-job-type-select-inline'
-		if (wrapperEl.querySelector(`.${id}`)) continue
+	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
+	if (!ids) return
+	const { projectId, taskId } = ids
 
-		const siblingEl = wrapperEl.querySelector('div.select_assignee_new_popover')
-		if (!siblingEl) continue
+	const id = 'acit-job-type-select-inline'
+	for (const taskFormEl of document.body.querySelectorAll('div.task_form')) {
+		if (taskFormEl.querySelector(`.${id}`)) continue
+		const labelEls = Array.from(taskFormEl.querySelectorAll('label'))
+		const labelEl = labelEls.find(x => x.innerText === 'Assignee')
+		if (!labelEl) continue
+		const parentEl = labelEl.parentNode.parentNode
 
-		const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
-		if (!ids) continue
-		const { projectId, taskId } = ids
-
-		siblingEl.parentNode.parentNode.insertBefore(El('div.form_field', [
+		parentEl.insertBefore(El('div.form_field', [
 			El('label', 'Job Type'),
 			JobTypeSelect({
 				id,
@@ -277,7 +274,54 @@ function injectJobTypeSelectIntoTaskForm() {
 					textDecoration: 'underline',
 				},
 			}),
-		]), siblingEl.parentNode)
+		]), labelEl.parentNode)
+	}
+}
+
+function injectAssigneeSelectIntoObjectView() {
+	const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
+	if (!propertyEl) return
+
+	const id = 'acit-assignee-select-modal'
+	if (propertyEl.querySelector(`.${id}`)) return
+
+	const oldEl = propertyEl.querySelector('button')
+	if (!oldEl) return
+
+	const ids = shared.getProjectIdAndTaskIdFromUrl(document.location)
+	if (!ids) return
+	const { projectId, taskId } = ids
+
+	const el = AssigneeSelect({ id, projectId, taskId, realtime: true })
+	oldEl.replaceWith(el)
+}
+
+function injectAssigneeSelectIntoTaskForm() {
+	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
+	if (!ids) return
+	const { projectId } = ids
+
+	const id = 'acit-assignee-select-inline'
+	for (const taskFormEl of document.body.querySelectorAll('div.task_form')) {
+		if (taskFormEl.querySelector(`.${id}`)) continue
+		const labelEls = Array.from(taskFormEl.querySelectorAll('label'))
+		const labelEl = labelEls.find(x => x.innerText === 'Assignee')
+		if (!labelEl) continue
+
+		const oldEl = labelEl.parentNode.querySelector('div.select_assignee_new_popover')
+		if (!oldEl) continue
+
+		const el = AssigneeSelect({
+			id,
+			projectId,
+			style: {
+				fontSize: 13,
+				fontWeight: 'inherit',
+				minHeight: 'unset',
+				textDecoration: 'underline',
+			},
+		})
+		oldEl.replaceWith(el)
 	}
 }
 
@@ -297,30 +341,30 @@ function injectChangeProjectMembersButtonIntoObjectView() {
 }
 
 function injectChangeProjectMembersButtonIntoTaskForm() {
-	const wrapperEl = document.body.querySelector('div.task_form')
-	if (!wrapperEl) return
-
-	const id = 'acit-change-project-members-button-inline'
-	if (wrapperEl.querySelector(`.${id}`)) return
-
-	const siblingEl = document.body.querySelector('div.select_assignee_new_popover')
-	if (!siblingEl) return
-
 	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
 	if (!ids) return
 	const { projectId } = ids
 
-	const buttonEl = ChangeProjectMembersButton({
-		id,
-		projectId,
-		style: {
-			fontSize: 13,
-			fontWeight: 'inherit',
-			minHeight: 'unset',
-			textDecoration: 'underline',
-		},
-	})
-	siblingEl.parentNode.appendChild(buttonEl)
+	const id = 'acit-change-project-members-button-inline'
+	for (const taskFormEl of document.body.querySelectorAll('div.task_form')) {
+		if (taskFormEl.querySelector(`.${id}`)) continue
+		const labelEls = Array.from(taskFormEl.querySelectorAll('label'))
+		const labelEl = labelEls.find(x => x.innerText === 'Assignee')
+		if (!labelEl) continue
+		const parentEl = labelEl.parentNode
+
+		const el = ChangeProjectMembersButton({
+			id,
+			projectId,
+			style: {
+				fontSize: 13,
+				fontWeight: 'inherit',
+				minHeight: 'unset',
+				textDecoration: 'underline',
+			},
+		})
+		parentEl.appendChild(el)
+	}
 }
 
 async function injectTimerIntoTaskModal() {

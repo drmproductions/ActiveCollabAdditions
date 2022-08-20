@@ -1,5 +1,6 @@
 import * as ListPopup from './popups/list.js'
 import * as api from '../api.js'
+import * as cache from '../cache.js'
 import { El } from './el.js'
 
 export function ChangeProjectMembersButton({ id, projectId, style }) {
@@ -34,11 +35,12 @@ export function ChangeProjectMembersButton({ id, projectId, style }) {
 					catch { }
 				},
 				async onUpdate() {
-					const members = await api.getProjectMembers({ projectId })
+					const project = await cache.getProject({ projectId })
+					const membersSet = new Set(project.members)
 					const users = angie.user_session_data.users.filter(x => !x.is_archived)
 					users.sort((a, b) => a.display_name.localeCompare(b.display_name))
 					return users.map(({ id, display_name: text, avatar_url: imageSrc }) =>
-						({ id, text, checked: members.includes(id), imageSrc }))
+						({ id, text, checked: membersSet.has(id), imageSrc }))
 				},
 			})
 		},

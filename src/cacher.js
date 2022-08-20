@@ -11,6 +11,19 @@ api.intercept(/(projects\/)([0-9]*)$/, async ({ method, onPerform }) => {
 	})
 })
 
+api.intercept(/(projects\/)([0-9]*)\/members(\/[0-9]*)?$/, async ({ matches, method, onPerform }) => {
+	if (method !== 'delete' && method !== 'post') return
+	onPerform(async (value) => {
+		const projectId = parseInt(matches[2])
+		if (!cache.hasProject({ projectId })) return
+		const project = await cache.getProject({ projectId })
+		project.members.length = 0
+		for (const member of value) {
+			project.members.push(member)
+		}
+	})
+})
+
 api.intercept(/projects\/for-screen$/, async ({ method, onPerform }) => {
 	if (method !== 'get' && method !== 'put') return
 	onPerform(async (value) => {

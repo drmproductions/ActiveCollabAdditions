@@ -82,6 +82,24 @@ export async function getTaskJobType(task) {
 	return await preferences.getTimersDefaultJobType()
 }
 
+export function getTopMostElement(className) {
+	let els = Array.from(document.body.querySelectorAll(`.${className}`))
+	els = els.filter(el => {
+		const rect = el.getBoundingClientRect()
+		return document.elementFromPoint(rect.left, rect.top) === el
+	})
+	if (els.length !== 1) return
+	return els[0]
+}
+
+export function getTopMostElementDataSetId(className, key) {
+	const el = shared.getTopMostElement(className)
+	if (!el) return
+	const value = parseInt(el.dataset[key])
+	if (isNaN(value)) return
+	return value
+}
+
 export async function getUserCanChangeIsBillable({ projectId }) {
 	const project = await cache.getProject({ projectId })
 	return project.members_can_change_billable

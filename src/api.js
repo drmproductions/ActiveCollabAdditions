@@ -31,11 +31,6 @@ export async function getProject({ projectId }) {
 	return await res.json()
 }
 
-export async function getProjectMembers({ projectId }) {
-	const res = await fetch(`${angie.api_url}/projects/${projectId}/members`)
-	return await res.json()
-}
-
 export async function getProjects() {
 	const res = await fetch(`${angie.api_url}/projects`)
 	return await res.json()
