@@ -4,7 +4,10 @@ import * as db from './db.js'
 import * as preferences from './preferences.js'
 import { TIMERS_WITH_SECONDS } from './env.js'
 
+const MAX_FORMATTABLE_DURATION = TIMERS_WITH_SECONDS ? parseTime('99:59:59') : parseTime('99:59')
+
 export function formatDuration(duration = 0, separator = ':', includeSeconds = TIMERS_WITH_SECONDS) {
+	duration = Math.max(0, Math.min(MAX_FORMATTABLE_DURATION, duration))
 	duration /= 1000
 
 	const parts = []

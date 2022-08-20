@@ -1,4 +1,3 @@
-import * as db from '../db.js'
 import * as shared from '../shared.js'
 import { El } from './el.js'
 
@@ -56,7 +55,7 @@ export class TimeInputHistoryStack {
 		this.set(this._forwardsStack.pop())
 	}
 
-	push(value, start, end) {
+	push({ end, start, value }) {
 		this._forwardsStack.length = 0
 		this._backwardsStack.push(this.get())
 		this.set({ end, start, value })
@@ -89,7 +88,29 @@ export class TimeInputHistoryStack {
 	}
 }
 
-function TimeInputInner({ timeInputHistoryStack, onChange }) {
+function Button({ onClick }, children) {
+	return El('div', {
+		style: {
+			color: 'var(--color-theme-900)',
+			cursor: 'pointer',
+			display: 'flex',
+			flexGrow: 1,
+			flexShrink: 0,
+			fontSize: 10,
+			paddingLeft: 2,
+			userSelect: 'none',
+			':active': {
+				color: 'var(--color-theme-800)',
+			},
+			':first-child': {
+				alignItems: 'end',
+			},
+		},
+		onClick,
+	}, children)
+}
+
+function Input({ timeInputHistoryStack, onChange }) {
 	async function onKeyDown(e) {
 		let { start, end, value } = timeInputHistoryStack.get()
 
@@ -133,13 +154,13 @@ function TimeInputInner({ timeInputHistoryStack, onChange }) {
 					}
 				}
 				value = chars.join('')
-				timeInputHistoryStack.push(value, start, end)
+				timeInputHistoryStack.push({ value, start, end })
 				return
 			}
 			if (value[start - 1] === ':') start--
 			if (start <= 0) return
 			value = value.slice(0, start - 1) + '0' + value.slice(start)
-			timeInputHistoryStack.push(value, start - 1, start - 1)
+			timeInputHistoryStack.push({ value, start: start - 1, end: start - 1 })
 			return
 		}
 
@@ -162,7 +183,7 @@ function TimeInputInner({ timeInputHistoryStack, onChange }) {
 
 		value = value.slice(0, start) + digit + value.slice(start + 1)
 		start = start + 1 + (value[start + 1] === ':' ? 1 : 0)
-		timeInputHistoryStack.push(value, start, start)
+		timeInputHistoryStack.push({ value, start, end: start })
 	}
 
 	const el = El('div', {
@@ -171,10 +192,11 @@ function TimeInputInner({ timeInputHistoryStack, onChange }) {
 			boxSizing: 'border-box',
 			color: 'var(--color-theme-900)',
 			fontSize: 14,
-			height: '32px !important',
-			padding: '4px 10px 6px 8px',
-			paddingRight: '8px !important',
-			paddingTop: '8px !important',
+			height: 32,
+			paddingBottom: 6,
+			paddingLeft: 8,
+			paddingRight: 4,
+			paddingTop: 8,
 			textAlign: 'center',
 			width: 'fit-content',
 		},
@@ -193,7 +215,9 @@ export function TimeInput({ timeInputHistoryStack, onChange }) {
 			border: '1px solid var(--border-primary)',
 			borderRadius: 10,
 			boxSizing: 'border-box',
+			display: 'flex',
 			height: '32px !important',
+			overflow: 'hidden',
 			transition: 'all .3s ease',
 			width: 'fit-content',
 			':hover': {
@@ -206,6 +230,30 @@ export function TimeInput({ timeInputHistoryStack, onChange }) {
 			},
 		},
 	}, [
-		TimeInputInner({ timeInputHistoryStack, onChange }),
+		Input({ timeInputHistoryStack, onChange }),
+		El('div', {
+			style: {
+				display: 'flex',
+				flexDirection: 'column',
+				width: 16,
+			},
+		}, [
+			Button({
+				onClick() {
+					const state = timeInputHistoryStack.get()
+					const duration = shared.parseTime(state.value) + (1000 * 60)
+					const value = shared.formatDuration(duration)
+					timeInputHistoryStack.push({ ...state, value })
+				},
+			}, '▲'),
+			Button({
+				onClick() {
+					const state = timeInputHistoryStack.get()
+					const duration = shared.parseTime(state.value) - (1000 * 60)
+					const value = shared.formatDuration(duration)
+					timeInputHistoryStack.push({ ...state, value })
+				},
+			}, '▼'),
+		])
 	])
 }
