@@ -22,13 +22,13 @@
 		origins = origins.filter(x => x !== '*://*/*')
 		if (origins.length === 0) return
 
-        await _browser.scripting.registerContentScripts([{
-             id: 'bundle',
-             js: ['bundle.js'],
-             matches: origins,
-             world: 'MAIN',
-             runAt: 'document_start',
-         }])
+		await _browser.scripting.registerContentScripts([{
+			id: 'bundle',
+			js: ['bundle.min.js'],
+			matches: origins,
+			world: 'MAIN',
+			runAt: 'document_start',
+		}])
 	}
 
 	if (_browser.runtime.getManifest().manifest_version == 3) {

@@ -18,7 +18,8 @@ try { fs.mkdirSync(`out/${target}`) } catch {}
 try { fs.mkdirSync(outDir) } catch {}
 
 fs.copyFileSync('www/background.js', `${outDir}/background.js`)
-fs.copyFileSync('www/bundle.js', `${outDir}/bundle.js`)
+fs.copyFileSync('www/bundle.min.js', `${outDir}/bundle.min.js`)
+fs.copyFileSync('www/bundle.min.js.map', `${outDir}/bundle.min.js.map`)
 fs.mkdirSync(`${outDir}/icons`)
 for (const filename of iconFilenames) {
 	fs.copyFileSync(`www/icons/${filename}`, `${outDir}/icons/${filename}`)
@@ -47,7 +48,7 @@ switch (target) {
 	case 'chromium':
 		manifest.manifest_version = 3
 		manifest.web_accessible_resources = [{
-			resources: ['bundle.js'],
+			resources: ['bundle.min.js', 'bundle.min.js.map'],
 			matches: ['*://*/*'],
 		}]
 		manifest.background = {
@@ -59,7 +60,7 @@ switch (target) {
 	case 'firefox':
 		manifest.manifest_version = 2
 		manifest.permissions = ['*://*/*']
-		manifest.web_accessible_resources = ['bundle.js']
+		manifest.web_accessible_resources = ['bundle.min.js']
 		break
 }
 

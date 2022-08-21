@@ -8,6 +8,8 @@ let ignoreMetaJsonChanges = false
 const options = {
 	bundle: true,
 	entryPoints: ['./src/index.js'],
+	minify: true,
+	sourcemap: true,
 	target: ['es6'],
 }
 
@@ -34,8 +36,7 @@ async function build() {
 		writeMeta(newMeta)
 		await esbuild.build({
 			...options,
-			minify: true,
-			outfile: './www/bundle.js',
+			outfile: './www/bundle.min.js',
 		})
 	}
 	catch (e) {
@@ -69,15 +70,17 @@ function watch() {
 		try {
 			await esbuild.build({
 				...options,
-				outfile: './out/bundle.js',
+				outfile: './out/bundle.min.js',
 			})
 
 			if (isChromiumBuilt) {
-				fs.copyFileSync('out/bundle.js', 'out/chromium/current/bundle.js')
+				fs.copyFileSync('out/bundle.min.js', 'out/chromium/current/bundle.min.js')
+				fs.copyFileSync('out/bundle.min.js.map', 'out/chromium/current/bundle.min.js.map')
 			}
 
 			if (isFirefoxBuilt) {
-				fs.copyFileSync('out/bundle.js', 'out/firefox/current/bundle.js')
+				fs.copyFileSync('out/bundle.min.js', 'out/firefox/current/bundle.min.js')
+				fs.copyFileSync('out/bundle.min.js.map', 'out/firefox/current/bundle.min.js.map')
 			}
 		}
 		catch (e) {
