@@ -1,6 +1,7 @@
 const chokidar = require('chokidar')
 const esbuild = require('esbuild')
 const fs = require('fs')
+const ws = require('ws')
 
 let ignoreMetaJsonChanges = false
 
@@ -52,6 +53,8 @@ function watch() {
 		throw new Error(`Please run "./scripts/build.sh build" and "./scripts/pack.sh chromium|firefox" once before running watch.`)
 	}
 
+	const wss = new ws.WebSocketServer({ port: 9999 })
+
 	async function update() {
 		ignoreMetaJsonChanges = true
 
@@ -84,6 +87,11 @@ function watch() {
 		writeMeta(oldMeta)
 
 		ignoreMetaJsonChanges = false
+
+		for (const client of wss.clients) {
+			if (client.readyState !== ws.WebSocket.OPEN) continue
+			client.send('reload')
+		}
 	}
 
 	let timeout

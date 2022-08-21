@@ -3,6 +3,15 @@
 (() => {
 	const _browser = globalThis.chrome || globalThis.browser
 
+	if (!_browser.runtime.getManifest().update_url) {
+		const ws = new WebSocket('ws://localhost:9999')
+		ws.onmessage = (e) => {
+			if (e.data === 'reload') {
+				_browser.runtime.reload()
+			}
+		}
+	}
+
 	async function updateContentScripts() {
 		try {
 			await _browser.scripting.unregisterContentScripts({ ids: ['bundle'] })
