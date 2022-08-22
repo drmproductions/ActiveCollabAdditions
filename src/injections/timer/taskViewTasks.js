@@ -10,7 +10,7 @@ const showTimerWhenHoveringOverTaskClassName = useStyle({
 	},
 })
 
-export default async function() {
+export default function() {
 	for (const taskEl of document.body.querySelectorAll('div.task_view_mode')) {
 		const taskNameEl = taskEl.querySelector('.task_name')
 		if (!taskNameEl) continue
@@ -30,9 +30,6 @@ export default async function() {
 		if (isNaN(projectId) || isNaN(taskId)) continue
 
 		cache.setTaskName({ projectId, taskId }, taskNameEl.innerText)
-
-		const project = await cache.getProject({ projectId })
-		if (!project.is_tracking_enabled) continue
 
 		taskEl.prepend(Timer({
 			dataset: { projectId, taskId },

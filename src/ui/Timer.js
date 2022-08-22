@@ -1,5 +1,6 @@
 import * as TimerDialog from './dialogs/timer.js'
 import * as bus from '../bus.js'
+import * as cache from '../cache.js'
 import * as db from '../db.js'
 import * as shared from '../shared.js'
 import { El } from './el.js'
@@ -175,6 +176,16 @@ export function Timer({ dataset, inert, menuButton, menuButtonOptions, style }) 
 	}
 
 	async function onConnected() {
+		const { projectId } = Timer.getProjectAndTaskId(this)
+		if (!isNaN(projectId)) {
+			const project = await cache.getProject({ projectId })
+			if (!project.is_tracking_enabled) {
+				this.remove()
+				return
+			}
+			this.style.display = ''
+		}
+
 		unsub = bus.onMessage(({ kind, data }) => {
 			switch (kind) {
 				case 'tick':
@@ -227,6 +238,7 @@ export function Timer({ dataset, inert, menuButton, menuButtonOptions, style }) 
 		}),
 		innerEl,
 	])
+	el.style.display = 'none'
 
 	innerEl.style.cursor = !inert ? 'pointer' : ''
 
