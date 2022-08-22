@@ -91,7 +91,7 @@ export class TimeInputHistoryStack {
 function Button({ onClick }, children) {
 	return El('div', {
 		style: {
-			color: 'var(--color-theme-900)',
+			color: 'var(--color-theme-600)',
 			cursor: 'pointer',
 			display: 'flex',
 			flexGrow: 1,
@@ -101,6 +101,9 @@ function Button({ onClick }, children) {
 			userSelect: 'none',
 			':active': {
 				color: 'var(--color-theme-800)',
+			},
+			':hover': {
+				color: 'var(--color-theme-700)',
 			},
 			':first-child': {
 				alignItems: 'end',
