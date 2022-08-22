@@ -9,6 +9,7 @@
 		const ws = new WebSocket('ws://localhost:9999')
 		ws.onmessage = (e) => {
 			if (e.data === 'reload') {
+				console.log('Reloading...')
 				_browser.runtime.reload()
 			}
 		}
