@@ -280,8 +280,8 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 		children.push(El('div', { style: buttonStyle }, [
 			TimerMenuButton({
 				alwaysVisible: true,
-				dataset: { projectId, taskId },
 				dialogOptions: { centered: true },
+				timerEl,
 			}),
 		]))
 	}

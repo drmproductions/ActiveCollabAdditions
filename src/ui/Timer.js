@@ -37,7 +37,7 @@ export function TimerMenuButton(options) {
 	}
 
 	async function onClick() {
-		const { projectId, taskId } = Timer.getProjectAndTaskId(this.parentNode)
+		const { projectId, taskId } = Timer.getProjectAndTaskId(options.timerEl ?? this.parentNode)
 
 		const timer = await db.getTimer(projectId, taskId)
 		if (timer && timer.running) {
