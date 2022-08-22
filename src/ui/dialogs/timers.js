@@ -46,7 +46,7 @@ function Project({ name, tasks }) {
 	])
 }
 
-function TotalsSection({ name }, el) {
+function TotalsSection({ name, title }, el) {
 	return El('div', {
 		style: {
 			...timerInnerClassName,
@@ -63,6 +63,7 @@ function TotalsSection({ name }, el) {
 				display: 'none',
 			},
 		},
+		title,
 	}, [
 		El('span', {
 			style: {
@@ -88,7 +89,7 @@ function Totals() {
 	const timeRoundedEl = El('span')
 
 	const timeSectionEl = TotalsSection({ name: 'Total' }, timeEl)
-	const timeRoundedSectionEl = TotalsSection({ name: 'Rounded' }, timeRoundedEl)
+	const timeRoundedSectionEl = TotalsSection({ name: 'Rounded', title: 'Note: Rounding preferences are applied per timer.' }, timeRoundedEl)
 
 	function onConnected() {
 		unsub = bus.onMessage(({ kind }) => {
