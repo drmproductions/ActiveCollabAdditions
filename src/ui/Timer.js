@@ -5,6 +5,21 @@ import * as shared from '../shared.js'
 import { El } from './el.js'
 import { TIMERS_WITH_SECONDS } from '../env.js'
 
+export const timerInnerClassName = {
+	alignItems: 'center',
+	borderRadius: 12,
+	boxSizing: 'border-box',
+	clear: 'none',
+	display: 'flex',
+	fontSize: 12,
+	height: 22.5,
+	justifyContent: 'center',
+	position: 'relative',
+	textAlign: 'center',
+	userSelect: 'none',
+	width: TIMERS_WITH_SECONDS ? 68 : 48,
+}
+
 export function TimerMenuButton(options) {
 	const { updatableContext } = options
 
@@ -153,23 +168,11 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 	}
 
 	innerEl = El('div.acit-timer-inner', {
-		style: {
-			alignItems: 'center',
-			borderRadius: 12,
-			boxSizing: 'border-box',
-			clear: 'none',
-			cursor: !inert && !updatableContext.disabled ? 'pointer' : '',
-			display: 'flex',
-			fontSize: 12,
-			height: 22.5,
-			justifyContent: 'center',
-			position: 'relative',
-			textAlign: 'center',
-			userSelect: 'none',
-			width: TIMERS_WITH_SECONDS ? 68 : 48,
-		},
+		style: timerInnerClassName,
 		onClick,
 	}, shared.formatDuration(0))
+
+	innerEl.style.cursor = !inert && !updatableContext.disabled ? 'pointer' : ''
 
 	const el = El('div.acit-timer', {
 		style: {
