@@ -10,11 +10,16 @@ import { El } from '../el.js'
 import { TimeInput, TimeInputHistoryStack } from '../TimeInput.js'
 import { useStyle } from '../style.js'
 
+const favoriteTaskClassName = useStyle({
+	' path': {
+		stroke: 'var(--color-theme-900)',
+		strokeWidth: 2,
+	},
+})
+
 const unfavoriteTaskClassName = useStyle({
 	' path': {
 		fill: 'none',
-		stroke: 'var(--color-theme-900)',
-		strokeWidth: 2,
 	},
 })
 
@@ -274,17 +279,20 @@ export async function show({ projectId, taskId, dialogOptions }) {
 
 	const deleteButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
-		iconStyle: { scale: 1.2 },
+		iconStyle: { scale: 1.25 },
 		title: 'Clear...',
 		onClick: onClickClear,
 	})
 
 	const favoritedButtonEl = DialogHeaderButton({
 		icon: angie.icons.svg_icons_star,
-		iconStyle: { scale: 1.1 },
+		iconStyle: {
+			scale: 1.1,
+		},
 		title: 'Favorite',
 		onClick: onClickFavorite,
 	})
+	favoritedButtonEl.classList.add(favoriteTaskClassName)
 
 	const submitButtonEl = DialogHeaderButton({
 		icon: angie.icons.svg_icons_icon_submit_time,

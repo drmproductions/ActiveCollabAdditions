@@ -4,10 +4,11 @@ import * as bus from '../../bus.js'
 import * as cache from '../../cache.js'
 import * as db from '../../db.js'
 import * as overlay from '../overlay.js'
+import * as preferences from '../../preferences.js'
 import * as shared from '../../shared.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
-import { Timer, TimerMenuButton } from '../Timer.js'
+import { Timer, TimerMenuButton, timerInnerClassName } from '../Timer.js'
 import { useAnimation, useStyle } from '../style.js'
 
 const rotateAnimation = useAnimation({
@@ -15,25 +16,133 @@ const rotateAnimation = useAnimation({
 	100: { transform: 'rotate(360deg) scaleX(-1)' },
 })
 
-const unfavoriteTaskClassName = useStyle({
+const favoriteTaskClassName = useStyle({
 	' path': {
-		fill: 'none',
 		stroke: 'var(--color-theme-600)',
 		strokeWidth: 2,
 	},
 })
 
+const unfavoriteTaskClassName = useStyle({
+	' path': {
+		fill: 'none',
+	},
+})
+
 function Project({ name, tasks }) {
-	const timersStyle = {
-		border: '1px solid var(--border-primary)',
-		borderRadius: '6px',
-		overflow: 'hidden',
+	return El('div', [
+		El('h2', {
+			style: {
+				marginTop: '16px',
+			}
+		}, name),
+		El('div', {
+			style: {
+				border: '1px solid var(--border-primary)',
+				borderRadius: '6px',
+				overflow: 'hidden',
+			},
+		}, tasks.map(Task))
+	])
+}
+
+function TotalsSection({ name }, el) {
+	return El('div', {
+		style: {
+			...timerInnerClassName,
+			alignItems: 'center',
+			background: 'var(--color-theme-300)',
+			border: '1px solid var(--border-primary)',
+			display: 'flex',
+			flexDirection: 'row',
+			gap: 6,
+			paddingLeft: 9,
+			paddingRight: 9,
+			width: '',
+			$: {
+				display: 'none',
+			},
+		},
+	}, [
+		El('span', {
+			style: {
+				color: 'var(--color-theme-700)',
+			},
+		}, name),
+		El('div', {
+			style: {
+				color: 'var(--color-theme-700)',
+				fontWeight: 500,
+			}
+		}, el),
+	])
+}
+
+function Totals() {
+	let timers
+	let unsub
+	let minimumEntry
+	let roundingInterval
+
+	const timeEl = El('span')
+	const timeRoundedEl = El('span')
+
+	const timeSectionEl = TotalsSection({ name: 'Total' }, timeEl)
+	const timeRoundedSectionEl = TotalsSection({ name: 'Rounded' }, timeRoundedEl)
+
+	function onConnected() {
+		unsub = bus.onMessage(({ kind }) => {
+			switch (kind) {
+				case 'tick':
+					draw()
+					break
+				case 'preference-changed':
+				case 'timer-created':
+				case 'timer-deleted':
+				case 'timer-updated':
+				case 'timers-deleted':
+					update()
+					break
+			}
+		})
 	}
 
-	return El('div', [
-		El('h2', { style: { marginTop: '16px' } }, name),
-		El('div', { style: timersStyle }, tasks.map(Task))
-	])
+	function onDisconnected() {
+		unsub()
+	}
+
+	function draw() {
+		if (!timers) return
+		let totalDuration = 0
+		let totalDurationRounded = 0
+		for (const timer of timers) {
+			const duration = shared.getTimerDuration(timer)
+			totalDuration += duration
+			totalDurationRounded += shared.roundDuration(duration, minimumEntry, roundingInterval)
+		}
+		timeEl.innerText = shared.formatDuration(totalDuration, undefined, false)
+		timeRoundedEl.innerText = shared.formatDuration(totalDurationRounded, undefined, false)
+		timeSectionEl.style.display = timers.length === 0 ? 'none' : ''
+		timeRoundedSectionEl.style.display = totalDuration === totalDurationRounded ? 'none' : ''
+	}
+
+	async function update() {
+		minimumEntry = (await preferences.getTimersMinimumEntry()) * 60 * 1000
+		roundingInterval = (await preferences.getTimersRoundingInterval()) * 60 * 1000
+		timers = await db.getTimers()
+		draw()
+	}
+
+	update()
+
+	return El('div', {
+		style: {
+			display: 'flex',
+			gap: 16,
+		},
+		onConnected,
+		onDisconnected,
+	}, [timeSectionEl, timeRoundedSectionEl])
 }
 
 function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState, taskId, timerEl }, index, timers) {
@@ -134,20 +243,31 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 	}
 	else {
 		if (isTimerSubmittable) {
-			children.push(El('div', { style: buttonStyle, title: 'Submit', onClick: onClickSubmit }, [
+			children.push(El('div', {
+				style: buttonStyle,
+				title: 'Submit',
+				onClick: onClickSubmit,
+			}, [
 				El('span.icon', {
 					innerHTML: angie.icons.svg_icons_icon_submit_time,
 					style: { ...iconStyle, scale: 1.2 },
 				}),
 			]))
-			children.push(El('div', { style: buttonStyle, title: 'Clear...', onClick: onClickClear }, [
+			children.push(El('div', {
+				style: {
+					...buttonStyle,
+					paddingTop: 2,
+				},
+				title: 'Clear...',
+				onClick: onClickClear,
+			}, [
 				El('span.icon', {
 					innerHTML: angie.icons.main_menu_icon_trash,
-					style: { ...iconStyle, scale: 1.05 },
+					style: { ...iconStyle, scale: 1.2 },
 				}),
 			]))
 		}
-		children.push(El('div' + (isFavorite ? '' : `.${unfavoriteTaskClassName}`), {
+		children.push(El(`div.${favoriteTaskClassName}` + (isFavorite ? '' : `.${unfavoriteTaskClassName}`), {
 			style: buttonStyle,
 			title: isFavorite ? 'Unfavorite' : 'Favorite',
 			onClick: onClickFavorite,
@@ -172,7 +292,8 @@ export function hide() {
 export function show() {
 	let unsub
 
-	const bodyEl = DialogBody()
+	const tasksEl = El('div')
+	const totalsEl = Totals()
 
 	async function onClickClearAll() {
 		const yes = await ConfirmPopup.show({
@@ -241,7 +362,7 @@ export function show() {
 
 	const deleteAllButtonEl = DialogHeaderButton({
 		icon: angie.icons.main_menu_icon_trash,
-		iconStyle: { scale: 1.2 },
+		iconStyle: { scale: 1.25 },
 		title: 'Clear All...',
 		style: { $: { display: 'none' } },
 		onClick: onClickClearAll,
@@ -267,13 +388,20 @@ export function show() {
 		return name
 	}
 
+	function hideMessage() {
+		messageEl.style.display = 'none'
+		tasksEl.style.display = ''
+		totalsEl.style.display = ''
+	}
+
 	function updateMessage(message) {
 		messageEl.innerText = message
 	}
 
 	function showMessage() {
-		bodyEl.innerHTML = ''
-		bodyEl.appendChild(messageEl)
+		messageEl.style.display = ''
+		tasksEl.style.display = 'none'
+		totalsEl.style.display = 'none'
 	}
 
 	function createOrUpdateTimerEl(projectId, taskId, disabled) {
@@ -384,18 +512,23 @@ export function show() {
 		projects.sort((a, b) => a.name.localeCompare(b.name))
 
 		clearTimeout(timeout)
-		bodyEl.innerHTML = ''
+		hideMessage()
+
+		tasksEl.innerHTML = ''
 		for (const project of projects) {
 			project.tasks.sort((a, b) => a.sortName.localeCompare(b.sortName))
-			bodyEl.appendChild(Project(project))
+			tasksEl.appendChild(Project(project))
 		}
 	}
 
 	const dialogEl = Dialog({ width: 600, onConnected, onDisconnected }, [
-		DialogHeader('Timers', [
+		DialogHeader([
+			'Timers',
+			totalsEl,
+		], [
 			DialogHeaderButton({
 				icon: angie.icons.main_menu_icon_system_settings,
-				iconStyle: { scale: 1.3 },
+				iconStyle: { scale: 1.25 },
 				title: 'Preferences',
 				onClick: onClickShowPreferences,
 			}),
@@ -408,7 +541,10 @@ export function show() {
 				onClick: () => hide(),
 			}),
 		]),
-		bodyEl,
+		DialogBody({}, [
+			messageEl,
+			tasksEl,
+		]),
 	])
 	overlay.show('timers', {}, dialogEl)
 }

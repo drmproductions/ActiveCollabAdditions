@@ -43,29 +43,29 @@ export function Dialog(options = {}, children) {
 }
 
 export function DialogBody(options = {}, children) {
-	const style = {
-		maxHeight: 'calc(100vh - 120px)',
-		overflowY: 'auto',
-		padding: '0 20px 20px 20px',
-	}
-
-	return El('div', { style, ...options }, children)
+	return El('div', {
+		style: {
+			maxHeight: 'calc(100vh - 120px)',
+			overflowY: 'auto',
+			padding: '0 20px 20px 20px',
+		},
+		...options,
+	}, children)
 }
 
 export function DialogHeader(title, buttons) {
-	const style = {
-		display: 'flex',
-	}
-
-	const labelStyle = {
-		fontSize: 20,
-		fontWeight: 700,
-		marginRight: 'auto',
-		padding: '20px 0 20px 20px',
-	}
-
-	return El('div', { style }, [
-		El('div', { style: labelStyle }, title),
+	return El('div', { style: { display: 'flex' } }, [
+		El('div', {
+			style: {
+				alignItems: 'center',
+				display: 'flex',
+				fontSize: 20,
+				fontWeight: 700,
+				gap: 20,
+				marginRight: 'auto',
+				padding: 20,
+			},
+		}, title),
 		...buttons,
 	])
 }
@@ -77,8 +77,9 @@ export function DialogHeaderButton({ icon, iconStyle, style, title, onClick }) {
 			cursor: 'pointer',
 			display: 'flex',
 			flexShrink: 0,
+			height: 66,
 			justifyContent: 'center',
-			width: '66px',
+			width: 66,
 			':hover': {
 				' .icon': {
 					transform: 'scale(1.2)',
