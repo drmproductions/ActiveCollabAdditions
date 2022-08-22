@@ -8,7 +8,7 @@ import { TIMERS_WITH_SECONDS } from '../env.js'
 export const timerInnerClassName = {
 	alignItems: 'center',
 	borderRadius: 12,
-	boxSizing: 'border-box',
+	boxSizing: 'content-box',
 	clear: 'none',
 	display: 'flex',
 	fontSize: 12,
