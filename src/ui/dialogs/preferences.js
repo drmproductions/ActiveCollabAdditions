@@ -4,6 +4,48 @@ import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.j
 import { El } from '../el.js'
 import { Timer } from '../Timer.js'
 
+function Column(name, el) {
+	return El('div', [
+		El('h2', name),
+		el,
+	])
+}
+
+function Row(children) {
+	return El('div', {
+		style: {
+			display: 'flex',
+			flexDirection: 'row',
+			gap: 16,
+		},
+	}, children)
+}
+
+function TimerPreview(name, timer) {
+	return El('div', {
+		style: {
+			alignItems: 'center',
+			display: 'flex',
+			flexDirection: 'column',
+			gap: 4,
+			position: 'relative',
+		}
+	}, [
+		timer,
+		El('span', {
+			style: {
+				bottom: -19,
+				color: 'var(--color-theme-900)',
+				fontSize: 11,
+				left: '50%',
+				position: 'absolute',
+				transform: 'translateX(-50%)',
+				whiteSpace: 'nowrap',
+			},
+		}, name),
+	])
+}
+
 export function hide() {
 	overlay.hide('preferences')
 }
@@ -125,35 +167,20 @@ export async function show() {
 		]),
 		DialogBody({}, [
 			El('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } }, [
-				El('div', { style: { display: 'flex', gap: 24 } }, [
-					El('div', [
-						El('h2', 'Default Job Type'),
-						timersDefaultJobTypeEl,
-					]),
-					El('div', [
-						El('h2', 'Minimum Entry'),
-						timersMinimumEntryEl,
-					]),
-					El('div', [
-						El('h2', 'Rounding Interval'),
-						timersRoundingIntervalEl,
-					]),
+				Row([
+					Column('Default Job Type', timersDefaultJobTypeEl),
+					Column('Minimum Entry', timersMinimumEntryEl),
+					Column('Rounding Interval', timersRoundingIntervalEl),
 				]),
-				El('div', { style: { display: 'flex', gap: 24 } }, [
-					El('div', [
-						El('h2', 'Color Scheme'),
-						timersColorSchemeEl,
-					]),
-					El('div', [
-						El('h2', 'Style'),
-						timersStyleEl,
-					]),
+				Row([
+					Column('Color Scheme', timersColorSchemeEl),
+					Column('Style', timersStyleEl),
 					El('div', { style: { display: 'flex', flexDirection: 'column' } }, [
 						El('h2', 'Timer Preview'),
 						El('div', { style: { display: 'flex', gap: 8 } }, [
-							Timer({ inert: { title: 'Initial' }, menuButton: false }),
-							Timer({ inert: { title: 'Paused', className: 'paused' }, menuButton: false }),
-							Timer({ inert: { title: 'Running', className: 'running' }, menuButton: false }),
+							TimerPreview('Default', Timer({ inert: { title: 'This is how the timer will appear if not started.' }, menuButton: false })),
+							TimerPreview('Paused', Timer({ inert: { title: 'This is how the timer will appear when paused.', className: 'paused' }, menuButton: false })),
+							TimerPreview('Running', Timer({ inert: { title: 'This is how the timer will appear when running.', className: 'running' }, menuButton: false })),
 						]),
 					]),
 				]),
