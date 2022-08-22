@@ -152,22 +152,19 @@ export function parseTime(time) {
 	return duration * 1000
 }
 
-export async function roundDuration(duration) {
-	const timersMinimumEntry = (await preferences.getTimersMinimumEntry()) * 60 * 1000
-	const timersRoundingInterval = (await preferences.getTimersRoundingInterval()) * 60 * 1000
-
-	duration = Math.max(duration, timersMinimumEntry)
-
-	if (timersRoundingInterval > 0) {
-		duration = Math.ceil(duration / timersRoundingInterval) * timersRoundingInterval
+export function roundDuration(duration, minimumEntry, roundingInterval) {
+	duration = Math.max(duration, minimumEntry)
+	if (roundingInterval > 0) {
+		duration = Math.ceil(duration / roundingInterval) * roundingInterval
 	}
-
 	return duration
 }
 
 export async function submitTimer({ projectId, taskId }) {
 	const task = await cache.getTask({ projectId, taskId })
 	const timer = await db.getTimer(projectId, taskId)
+	const minimumEntry = (await preferences.getTimersMinimumEntry()) * 60 * 1000
+	const roundingInterval = (await preferences.getTimersRoundingInterval()) * 60 * 1000
 
 	let billableStatus = timer.isBillable
 	if (typeof billableStatus !== 'boolean') {
@@ -180,7 +177,8 @@ export async function submitTimer({ projectId, taskId }) {
 		timer.submittingState = 'submitting'
 		await db.updateTimer(timer)
 
-		const duration = await roundDuration(getTimerDuration(timer))
+		let duration = getTimerDuration(timer)
+		duration = roundDuration(duration, minimumEntry, roundingInterval)
 
 		await api.postTimeRecord({
 			billable_status: billableStatus,
