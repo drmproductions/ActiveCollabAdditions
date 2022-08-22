@@ -35,10 +35,10 @@ export default async function() {
 		if (!project.is_tracking_enabled) continue
 
 		taskEl.prepend(Timer({
+			dataset: { projectId, taskId },
 			style: {
 				marginRight: 7,
 			},
-			updatableContext: { projectId, taskId },
 		}))
 	}
 }

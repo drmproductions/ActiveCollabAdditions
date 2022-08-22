@@ -21,8 +21,6 @@ export const timerInnerClassName = {
 }
 
 export function TimerMenuButton(options) {
-	const { updatableContext } = options
-
 	const style = {
 		cursor: 'pointer',
 		float: 'left',
@@ -39,16 +37,19 @@ export function TimerMenuButton(options) {
 	}
 
 	async function onClick() {
-		const timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
+		const { projectId, taskId } = Timer.getProjectAndTaskId(this.parentNode)
+
+		const timer = await db.getTimer(projectId, taskId)
 		if (timer && timer.running) {
 			timer.duration += Date.now() - timer.started_at
 			timer.started_at = Date.now()
 			timer.running = false
 			await db.updateTimer(timer)
 		}
+
 		TimerDialog.show({
-			projectId: updatableContext.projectId,
-			taskId: updatableContext.taskId,
+			projectId,
+			taskId,
 			dialogOptions: {
 				target: this,
 				...options.dialogOptions,
@@ -63,12 +64,85 @@ export function TimerMenuButton(options) {
 	])
 }
 
-export function Timer({ inert, menuButton, menuButtonOptions, style, updatableContext = {} }) {
+Timer.cachedTimers = new WeakMap()
+
+Timer.getDisabled = (el) => {
+	return El.getData(el, 'disabled') === 'true'
+}
+
+Timer.getInnerEl = (el) => {
+	return el.querySelector('.acit-timer-inner')
+}
+
+Timer.getMenuButtonEl = (el) => {
+	return el.querySelector('.acit-timer-menu-button')
+}
+
+Timer.getProjectAndTaskId = (el) => {
+	return {
+		projectId: parseInt(El.getData(el, 'projectId')),
+		taskId: parseInt(El.getData(el, 'taskId')),
+	}
+}
+
+Timer.draw = (el) => {
+	const { projectId, taskId } = Timer.getProjectAndTaskId(el)
+
+	if (isNaN(projectId) || isNaN(taskId)) {
+		el.style.display = 'none'
+		return
+	}
+
+	el.style.display = ''
+
+	const innerEl = Timer.getInnerEl(el)
+	const timer = Timer.cachedTimers.get(el)
+
+	if (!timer) {
+		innerEl.innerText = shared.formatDuration(0)
+		innerEl.classList.toggle('running', false)
+		innerEl.classList.toggle('paused', false)
+		return
+	}
+
+	const duration = shared.getTimerDuration(timer)
+	innerEl.innerText = shared.formatDuration(duration)
+	innerEl.classList.toggle('running', timer.running)
+	innerEl.classList.toggle('paused', !timer.running && shared.isTimerSubmittable(timer))
+}
+
+Timer.setDisabled = (el, disabled) => {
+	El.setData(el, { disabled })
+}
+
+Timer.setProjectAndTaskId = (el, projectId, taskId) => {
+	El.setData(el, { projectId, taskId })
+}
+
+Timer.update = async (el) => {
+	const { projectId, taskId } = Timer.getProjectAndTaskId(el)
+
+	if (isNaN(projectId) || isNaN(taskId)) {
+		Timer.cachedTimers.delete(el)
+		Timer.draw(el)
+		return
+	}
+
+	const timer = await db.getTimer(projectId, taskId)
+	Timer.cachedTimers.set(el, timer)
+	Timer.draw(el)
+}
+
+export function Timer({ dataset, inert, menuButton, menuButtonOptions, style }) {
+	let unsub
+
 	async function onClick() {
 		if (inert) return
-		if (updatableContext.disabled) return
+		if (Timer.getDisabled(this.parentNode)) return
 
-		const timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
+		const { projectId, taskId } = Timer.getProjectAndTaskId(this.parentNode)
+
+		const timer = await db.getTimer(projectId, taskId)
 
 		if (timer) {
 			if (timer.running) {
@@ -81,16 +155,16 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 		else {
 			await db.createTimer({
 				duration: 0,
-				projectId: updatableContext.projectId,
+				projectId,
 				running: true,
 				started_at: Date.now(),
-				taskId: updatableContext.taskId,
+				taskId,
 			})
 		}
 
 		// pause other timers
 		for (const timer of await db.getTimers()) {
-			if (timer.projectId === updatableContext.projectId && timer.taskId === updatableContext.taskId) continue
+			if (timer.projectId === projectId && timer.taskId === taskId) continue
 			if (!timer.running) continue
 			timer.duration += Date.now() - timer.started_at
 			timer.started_at = Date.now()
@@ -100,46 +174,13 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 		}
 	}
 
-	let innerEl
-	let timer
-	let unsub
-
-	function draw() {
-		if (!updatableContext.projectId || !updatableContext.taskId) {
-			innerEl.parentNode.style.display = 'none'
-			return
-		}
-		innerEl.parentNode.style.display = ''
-
-		if (!timer) {
-			innerEl.innerText = shared.formatDuration(0)
-			innerEl.classList.toggle('running', false)
-			innerEl.classList.toggle('paused', false)
-			return
-		}
-
-		const duration = shared.getTimerDuration(timer)
-		innerEl.innerText = shared.formatDuration(duration)
-		innerEl.classList.toggle('running', timer.running)
-		innerEl.classList.toggle('paused', !timer.running && shared.isTimerSubmittable(timer))
-	}
-
-	async function update() {
-		if (!updatableContext.projectId || !updatableContext.taskId) {
-			timer = undefined
-			draw()
-			return
-		}
-		timer = await db.getTimer(updatableContext.projectId, updatableContext.taskId)
-		draw()
-	}
-
 	async function onConnected() {
-		if (inert) return
 		unsub = bus.onMessage(({ kind, data }) => {
 			switch (kind) {
 				case 'tick':
+					const timer = Timer.cachedTimers.get(this)
 					if (!timer || !timer.running) break
+					const innerEl = Timer.getInnerEl(this)
 					const duration = shared.getTimerDuration(timer)
 					const separator = innerEl.innerText.includes(':') ? ' ' : ':'
 					innerEl.innerText = shared.formatDuration(duration, separator)
@@ -147,23 +188,19 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 				case 'timer-created':
 				case 'timer-deleted':
 				case 'timer-updated':
-					if (data.projectId !== updatableContext.projectId) break
-					if (data.taskId !== updatableContext.taskId) break
-					update()
+					const { projectId, taskId } = Timer.getProjectAndTaskId(this)
+					if (data.projectId !== projectId) break
+					if (data.taskId !== taskId) break
+					Timer.update(this)
 					break
 				case 'timers-deleted':
-					update()
+					Timer.update(this)
 					break
 			}
 		})
-		updatableContext.onUpdate = (updates) => {
-			Object.assign(updatableContext, updates)
-			update()
-		}
 	}
 
 	function onDisconnected() {
-		if (inert) return
 		unsub()
 	}
 
@@ -172,9 +209,8 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 		onClick,
 	}, shared.formatDuration(0))
 
-	innerEl.style.cursor = !inert && !updatableContext.disabled ? 'pointer' : ''
-
 	const el = El('div.acit-timer', {
+		dataset,
 		style: {
 			clear: 'right',
 			cursor: 'default',
@@ -182,16 +218,17 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 			position: 'relative',
 			...style,
 		},
-		onConnected,
-		onDisconnected,
+		onConnected: !inert && onConnected,
+		onDisconnected: !inert && onDisconnected,
 	}, [
 		menuButton !== false && TimerMenuButton({
 			style: { marginRight: 8, ...menuButtonOptions?.style },
-			updatableContext,
 			...menuButtonOptions,
 		}),
 		innerEl,
 	])
+
+	innerEl.style.cursor = !inert ? 'pointer' : ''
 
 	if (inert) {
 		if (typeof inert === 'object') {
@@ -204,7 +241,7 @@ export function Timer({ inert, menuButton, menuButtonOptions, style, updatableCo
 		}
 	}
 	else {
-		update()
+		Timer.update(el)
 	}
 
 	return el

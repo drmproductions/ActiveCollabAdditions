@@ -278,7 +278,11 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 			}),
 		]))
 		children.push(El('div', { style: buttonStyle }, [
-			TimerMenuButton({ alwaysVisible: true, dialogOptions: { centered: true }, updatableContext: { projectId, taskId } }),
+			TimerMenuButton({
+				alwaysVisible: true,
+				dataset: { projectId, taskId },
+				dialogOptions: { centered: true },
+			}),
 		]))
 	}
 
@@ -409,17 +413,16 @@ export function show() {
 
 		const previousTimerEl = previousElMap.get(id)
 		if (previousTimerEl) {
-			previousTimerEl.updatableContext?.onUpdate({ disabled })
+			Timer.setDisabled(previousTimerEl.timerEl, disabled)
 			return previousTimerEl.timerEl
 		}
 
-		const updatableContext = { projectId, taskId }
 		const timerEl = Timer({
+			dataset: { disabled, projectId, taskId },
 			disabled,
 			menuButton: false,
-			updatableContext,
 		})
-		previousElMap.set(id, { timerEl, updatableContext })
+		previousElMap.set(id, { timerEl })
 		return timerEl
 	}
 

@@ -56,13 +56,21 @@ function createElement(selector, options, children) {
 			el.classList.add(className)
 	}
 
-	setChildren(el, children)
-	setOptions(el, options)
+	El.setChildren(el, children)
+	El.setOptions(el, options)
 
 	return el
 }
 
-export function setChildren(el, children) {
+export function El(selector, options, children) {
+	return createElement(selector, options, children)
+}
+
+El.getData = (el, key) => {
+	return el.dataset[key]
+}
+
+El.setChildren = (el, children) => {
 	if (!(el instanceof Element)) return
 
 	el.innerHTML = ''
@@ -86,7 +94,14 @@ export function setChildren(el, children) {
 	}
 }
 
-export function setOptions(el, options) {
+El.setData = (el, data) => {
+	if (typeof data !== 'object') return
+	for (let [k2, v2] of Object.entries(data)) {
+		el.dataset[k2] = v2
+	}
+}
+
+El.setOptions = (el, options) => {
 	if (!(el instanceof Element)) return
 	if (typeof options !== 'object') return
 
@@ -104,23 +119,10 @@ export function setOptions(el, options) {
 				el[k1] = v1
 				break
 			case 'dataset':
-				for (let [k2, v2] of Object.entries(v1)) {
-					el.dataset[k2] = v2
-				}
+				El.setData(el, v1)
+				break
 			case 'style':
-				const normalStyles = v1.$
-				if (normalStyles) {
-					delete v1.$
-					for (let [k2, v2] of Object.entries(normalStyles)) {
-						el.style[k2] = formatNumberToPixels(k2, v2)
-					}
-				}
-				if (Object.keys(v1).length > 0) {
-					el.classList.add(useStyle(v1))
-				}
-				if (normalStyles) {
-					v1.$ = normalStyles
-				}
+				El.setStyle(el, v1)
 				break
 			default:
 				if (isSVG) {
@@ -133,6 +135,20 @@ export function setOptions(el, options) {
 	}
 }
 
-export function El(selector, options, children) {
-	return createElement(selector, options, children)
+El.setStyle = (el, style) => {
+	const normalStyles = style.$
+	if (normalStyles) {
+		delete style.$
+		for (let [k2, v2] of Object.entries(normalStyles)) {
+			el.style[k2] = formatNumberToPixels(k2, v2)
+		}
+	}
+
+	if (Object.keys(style).length > 0) {
+		el.classList.add(useStyle(style))
+	}
+
+	if (normalStyles) {
+		style.$ = normalStyles
+	}
 }

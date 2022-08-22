@@ -10,8 +10,6 @@ export default function() {
 	const containerEl = document.querySelector('.topbar_items')
 	if (!containerEl) return
 
-	const updatableContext = {}
-
 	const timerEl = Timer({
 		menuButtonOptions: { alwaysVisible: true, style: { marginRight: 16 } },
 		style: {
@@ -19,7 +17,6 @@ export default function() {
 			pointerEvents: 'all',
 			top: 9,
 		},
-		updatableContext,
 	})
 
 	async function update() {
@@ -32,8 +29,11 @@ export default function() {
 		const projectId = timer?.projectId
 		const taskId = timer?.taskId
 
-		if (updatableContext.projectId !== projectId || updatableContext.taskId !== taskId) {
-			updatableContext?.onUpdate({ projectId, taskId })
+		const prevIds = Timer.getProjectAndTaskId(timerEl)
+
+		if (prevIds.projectId !== projectId || prevIds.taskId !== taskId) {
+			Timer.setProjectAndTaskId(timerEl, projectId, taskId)
+			await Timer.update(timerEl)
 
 			if (timer) {
 				const projectName = await cache.getProjectName({ projectId })

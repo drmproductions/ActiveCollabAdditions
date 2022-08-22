@@ -31,11 +31,11 @@ export default async function() {
 	if (!project.is_tracking_enabled) return
 
 	optionsEl.prepend(Timer({
+		dataset: { projectId, taskId },
 		menuButtonOptions: { alwaysVisible: true },
 		style: {
 			marginRight: 7,
 			marginTop: 5,
 		},
-		updatableContext: { projectId, taskId },
 	}))
 }

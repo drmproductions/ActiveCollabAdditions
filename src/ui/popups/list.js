@@ -1,6 +1,6 @@
 import * as overlay from '../overlay.js'
 import { Popup } from './popup.js'
-import { El, setChildren } from '../el.js'
+import { El } from '../el.js'
 
 function Body(children) {
 	return El('div', {
@@ -211,7 +211,7 @@ export function show({
 			return el
 		})
 
-		setChildren(listEl, els)
+		El.setChildren(listEl, els)
 	}
 
 	function filter(filterText) {
