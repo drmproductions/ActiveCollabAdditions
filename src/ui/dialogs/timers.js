@@ -63,7 +63,7 @@ function TotalsSection({ name, title }, el) {
 				display: 'none',
 			},
 		},
-		title,
+		title: title ?? '',
 	}, [
 		El('span', {
 			style: {
