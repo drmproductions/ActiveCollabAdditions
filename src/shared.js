@@ -96,7 +96,7 @@ export function getTopMostElement(className) {
 }
 
 export function getTopMostElementDataSetId(className, key) {
-	const el = shared.getTopMostElement(className)
+	const el = getTopMostElement(className)
 	if (!el) return
 	const value = parseInt(el.dataset[key])
 	if (isNaN(value)) return

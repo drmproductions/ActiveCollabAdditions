@@ -4,7 +4,7 @@ import { AssigneeSelect } from '../../ui/AssigneeSelect.js'
 export default function() {
 	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)
 	if (!ids) return
-	const { projectId } = ids
+	const { projectId, taskId } = ids
 
 	const id = 'acit-assignee-select-inline'
 	for (const taskFormEl of document.body.querySelectorAll('div.task_form')) {
@@ -19,6 +19,8 @@ export default function() {
 		const el = AssigneeSelect({
 			id,
 			projectId,
+			taskId,
+			realtime: false,
 			style: {
 				fontSize: 13,
 				fontWeight: 'inherit',

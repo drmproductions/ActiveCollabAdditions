@@ -1,6 +1,9 @@
 import * as api from './api.js'
 import * as cache from './cache.js'
+import * as log from './log.js'
 import * as shared from './shared.js'
+import { AssigneeSelect } from './ui/AssigneeSelect.js'
+import { JobTypeSelect } from './ui/JobTypeSelect.js'
 import { useStyle } from './ui/style.js'
 
 import injectAssigneeSelectIntoObjectView from './injections/assigneeSelect/objectView.js'
@@ -21,34 +24,38 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks)$/, async ({ method, options }) =>
 
 	try {
 		const body = JSON.parse(options.body)
-		const assigneeId = shared.getTopMostElementDataSetId('acit-assignee-select-inline', 'assigneeId')
+
+		const assigneeId = AssigneeSelect.getLastValue()
 		if (assigneeId !== undefined) {
 			body.assignee_id = assigneeId
 		}
-		const jobTypeId = shared.getTopMostElementDataSetId('acit-job-type-select-inline', 'jobTypeId')
+
+		const jobTypeId = JobTypeSelect.getLastValue()
 		if (jobTypeId !== undefined) {
 			body.job_type_id = jobTypeId
 		}
+
 		options.body = JSON.stringify(body)
 	}
-	catch {}
+	catch (e) {
+		log.e('injector', e)
+	}
 })
 
 api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, method, options }) => {
 	if (method !== 'put') return
 	if (typeof options.body !== 'string') return
 
-	let jobTypeId
-	const el = shared.getTopMostElement('acit-job-type-select-inline')
-	if (el) {
-		jobTypeId = parseInt(el.dataset.jobTypeId)
-		if (isNaN(jobTypeId)) jobTypeId = undefined
-	}
-
 	try {
 		const body = JSON.parse(options.body)
 
-		if (typeof jobTypeId === 'number') {
+		const assigneeId = AssigneeSelect.getLastValue()
+		if (assigneeId !== undefined) {
+			body.assignee_id = assigneeId
+		}
+
+		const jobTypeId = JobTypeSelect.getLastValue()
+		if (jobTypeId !== undefined) {
 			body.job_type_id = jobTypeId
 		}
 
@@ -71,7 +78,9 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, me
 
 		options.body = JSON.stringify(body)
 	}
-	catch {}
+	catch (e) {
+		log.e('injector', e)
+	}
 })
 
 export function init() {

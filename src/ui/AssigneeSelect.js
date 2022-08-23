@@ -3,6 +3,8 @@ import * as api from '../api.js'
 import * as cache from '../cache.js'
 import { El } from './el.js'
 
+let lastValue = 0
+
 export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 	const el = El(`div.${id}`, {
 		style: {
@@ -22,10 +24,11 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 				placeholder: 'Choose an assignee',
 				target: this,
 				async onClick({ id }) {
+					lastValue = id
 					if (realtime && taskId) {
 						await api.putTask({ projectId, taskId }, { assignee_id: id })
 					}
-					await update(id)
+					await update(false)
 					return 'hide'
 				},
 				async onUpdate() {
@@ -46,19 +49,25 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 		},
 	})
 
-	async function update(assigneeId) {
-		if (taskId) {
-			if (realtime || !assigneeId) {
-				const task = await cache.getTask({ projectId, taskId })
-				assigneeId = task.assignee_id
-			}
+	async function update(firstUpdate) {
+		let assigneeId = AssigneeSelect.getLastValue()
+		if ((firstUpdate || realtime) && taskId) {
+			const task = await cache.getTask({ projectId, taskId })
+			assigneeId = task.assignee_id
 		}
 		const user = angie.collections.users.find(x => x.id === assigneeId)
 		el.innerText = user?.display_name ?? 'No Assignee...'
 		el.dataset.assigneeId = assigneeId ?? 0
 	}
 
-	update()
+	update(true)
 
 	return el
+}
+
+AssigneeSelect.getLastValue = () => {
+	if (!angie.collections.users.some(x => x.id === lastValue)) {
+		lastValue = undefined
+	}
+	return lastValue
 }
