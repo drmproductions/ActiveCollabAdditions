@@ -212,7 +212,7 @@ export function Timer({ dataset, inert, menuButton, menuButtonOptions, style }) 
 	}
 
 	function onDisconnected() {
-		unsub()
+		unsub?.()
 	}
 
 	innerEl = El('div.acit-timer-inner', {
