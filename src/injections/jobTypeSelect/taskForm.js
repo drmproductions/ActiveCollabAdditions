@@ -11,11 +11,11 @@ export default function() {
 	for (const taskFormEl of document.body.querySelectorAll('div.task_form')) {
 		if (taskFormEl.querySelector(`.${id}`)) continue
 		const labelEls = Array.from(taskFormEl.querySelectorAll('label'))
-		const labelEl = labelEls.find(x => x.innerText === 'Assignee')
+		const labelEl = labelEls.find(x => x.innerText === 'Time Estimation')
 		if (!labelEl) continue
 		const parentEl = labelEl.parentNode.parentNode
 
-		parentEl.insertBefore(El('div.form_field', [
+		parentEl.appendChild(El('div.form_field', [
 			El('label', 'Job Type'),
 			JobTypeSelect({
 				id,
@@ -29,6 +29,6 @@ export default function() {
 					textDecoration: 'underline',
 				},
 			}),
-		]), labelEl.parentNode)
+		]))
 	}
 }
