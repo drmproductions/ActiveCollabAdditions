@@ -68,6 +68,18 @@ export function setTaskName({ projectId, taskId }, value) {
 	set(`task-name-${projectId}-${taskId}`, value)
 }
 
+export function updateProject({ projectId }, updates) {
+	const project = cacheMap.get(`project-${projectId}`)
+	if (!project) return
+	Object.assign(project, updates)
+}
+
+export function updateTask({ projectId, taskId }, updates) {
+	const task = cacheMap.get(`task-${projectId}-${taskId}`)
+	if (!task) return
+	Object.assign(task, updates)
+}
+
 export async function useCache(key, func) {
 	if (cacheMap.has(key)) {
 		return cacheMap.get(key)

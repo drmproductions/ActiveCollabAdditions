@@ -29,7 +29,7 @@ api.intercept(/projects\/for-screen$/, async ({ method, onPerform }) => {
 	onPerform(async (value) => {
 		if (!Array.isArray(value)) return
 		for (const project of value) {
-			cache.setProject({ projectId: project.id }, project)
+			cache.updateProject({ projectId: project.id }, project)
 		}
 	})
 })
@@ -39,7 +39,7 @@ api.intercept(/(projects\/)([0-9]*)\/tasks\/for-screen$/, async ({ method, onPer
 	onPerform(async (value) => {
 		if (!Array.isArray(value)) return
 		for (const task of value) {
-			cache.setTask({ projectId: task.project_id, taskId: task.id }, task)
+			cache.updateTask({ projectId: task.project_id, taskId: task.id }, task)
 		}
 	})
 })
