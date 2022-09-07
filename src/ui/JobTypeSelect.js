@@ -54,8 +54,9 @@ export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 			jobTypeId = task.job_type_id
 		}
 		const jobType = angie.collections.job_types.find(x => x.id === jobTypeId)
+		lastValue = jobType?.id ?? 0
 		el.innerText = jobType?.name ?? 'No Job Type...'
-		el.dataset.jobTypeId = jobTypeId ?? 0
+		el.dataset.jobTypeId = lastValue
 	}
 
 	update(true)

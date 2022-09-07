@@ -57,7 +57,8 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 		}
 		const user = angie.collections.users.find(x => x.id === assigneeId)
 		el.innerText = user?.display_name ?? 'No Assignee...'
-		el.dataset.assigneeId = assigneeId ?? 0
+		lastValue = assigneeId ?? 0
+		el.dataset.assigneeId = lastValue
 	}
 
 	update(true)

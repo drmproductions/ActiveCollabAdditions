@@ -49,13 +49,17 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, me
 	try {
 		const body = JSON.parse(options.body)
 
+		const projectId = parseInt(matches[2])
+		const taskId = parseInt(matches[5])
+		const task = await cache.getTask({ projectId, taskId })
+
 		const assigneeId = AssigneeSelect.getLastValue()
-		if (assigneeId !== undefined) {
+		if (assigneeId !== undefined && assigneeId !== task.assignee_id) {
 			body.assignee_id = assigneeId
 		}
 
 		const jobTypeId = JobTypeSelect.getLastValue()
-		if (jobTypeId !== undefined) {
+		if (jobTypeId !== undefined && jobTypeId !== task.job_type_id) {
 			body.job_type_id = jobTypeId
 		}
 
@@ -67,9 +71,6 @@ api.intercept(/(projects\/)([0-9]*)(\/)(tasks\/)([0-9]*)$/, async ({ matches, me
 		if (typeof body.estimate === 'string') {
 			const estimate = parseInt(body.estimate)
 			if (!isNaN(estimate)) {
-				const projectId = parseInt(matches[2])
-				const taskId = parseInt(matches[5])
-				const task = await cache.getTask({ projectId, taskId })
 				if (task.estimate === estimate) {
 					delete body.estimate
 				}
