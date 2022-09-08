@@ -49,8 +49,19 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 		},
 	})
 
+	async function firstUpdateCanUseLastValue() {
+		if (!projectId || !lastValue) return false
+		const project = await cache.getProject({ projectId })
+		if (!project) return false
+		return project.members.includes(lastValue)
+	}
+
 	async function update(firstUpdate) {
 		let assigneeId = AssigneeSelect.getLastValue()
+		if (firstUpdate && !(await firstUpdateCanUseLastValue())) {
+			assigneeId = 0
+			lastValue = undefined
+		}
 		if ((firstUpdate || realtime) && taskId) {
 			const task = await cache.getTask({ projectId, taskId })
 			assigneeId = task.assignee_id
