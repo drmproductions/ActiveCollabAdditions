@@ -238,7 +238,10 @@ export function Timer({ dataset, inert, menuButton, menuButtonOptions, style }) 
 		}),
 		innerEl,
 	])
-	el.style.display = 'none'
+
+	if (!inert) {
+		el.style.display = 'none'
+	}
 
 	innerEl.style.cursor = !inert ? 'pointer' : ''
 
