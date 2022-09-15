@@ -24,11 +24,14 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 				placeholder: 'Choose an assignee',
 				target: this,
 				async onClick({ id }) {
-					lastValue = id
 					if (realtime && taskId) {
 						await api.putTask({ projectId, taskId }, { assignee_id: id })
+						await update(false)
 					}
-					await update(false)
+					else {
+						lastValue = id
+						await update(false, id)
+					}
 					return 'hide'
 				},
 				async onUpdate() {
@@ -47,29 +50,21 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 				},
 			})
 		},
+		onDisconnected() {
+			setTimeout(() => {
+				lastValue = undefined
+			}, 100)
+		},
 	})
 
-	async function firstUpdateCanUseLastValue() {
-		if (!projectId || !lastValue) return false
-		const project = await cache.getProject({ projectId })
-		if (!project) return false
-		return project.members.includes(lastValue)
-	}
-
-	async function update(firstUpdate) {
-		let assigneeId = AssigneeSelect.getLastValue()
-		if (firstUpdate && !(await firstUpdateCanUseLastValue())) {
-			assigneeId = 0
-			lastValue = undefined
-		}
+	async function update(firstUpdate, assigneeId) {
 		if ((firstUpdate || realtime) && taskId) {
 			const task = await cache.getTask({ projectId, taskId })
 			assigneeId = task.assignee_id
 		}
 		const user = angie.collections.users.find(x => x.id === assigneeId)
 		el.innerText = user?.display_name ?? 'No Assignee...'
-		lastValue = assigneeId ?? 0
-		el.dataset.assigneeId = lastValue
+		el.dataset.assigneeId = assigneeId ?? 0
 	}
 
 	update(true)
@@ -78,8 +73,7 @@ export function AssigneeSelect({ id, projectId, taskId, realtime, style }) {
 }
 
 AssigneeSelect.getLastValue = () => {
-	if (!angie.collections.users.some(x => x.id === lastValue)) {
-		lastValue = undefined
-	}
-	return lastValue
+	const tempLastValue = lastValue
+	lastValue = undefined
+	return tempLastValue
 }

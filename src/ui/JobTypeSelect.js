@@ -23,11 +23,14 @@ export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 				placeholder: 'Choose a job type',
 				target: this,
 				async onClick({ id }) {
-					lastValue = id
 					if (realtime && taskId) {
 						await api.putTask({ projectId, taskId }, { job_type_id: id })
+						await update(false)
 					}
-					await update(false)
+					else {
+						lastValue = id
+						await update(false, id)
+					}
 					return 'hide'
 				},
 				async onUpdate() {
@@ -45,18 +48,21 @@ export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 				},
 			})
 		},
+		onDisconnected() {
+			setTimeout(() => {
+				lastValue = undefined
+			}, 100)
+		},
 	})
 
-	async function update(firstUpdate) {
-		let jobTypeId = JobTypeSelect.getLastValue(id)
+	async function update(firstUpdate, jobTypeId) {
 		if ((firstUpdate || realtime) && taskId) {
 			const task = await cache.getTask({ projectId, taskId })
 			jobTypeId = task.job_type_id
 		}
 		const jobType = angie.collections.job_types.find(x => x.id === jobTypeId)
-		lastValue = jobType?.id ?? 0
 		el.innerText = jobType?.name ?? 'No Job Type...'
-		el.dataset.jobTypeId = lastValue
+		el.dataset.jobTypeId = jobType?.id ?? 0
 	}
 
 	update(true)
@@ -65,8 +71,7 @@ export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 }
 
 JobTypeSelect.getLastValue = () => {
-	if (!angie.collections.job_types.some(x => x.id === lastValue)) {
-		lastValue = undefined
-	}
-	return lastValue
+	const tempLastValue = lastValue
+	lastValue = undefined
+	return tempLastValue
 }
