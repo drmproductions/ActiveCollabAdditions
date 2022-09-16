@@ -1,5 +1,5 @@
-import { El } from '../el.js'
 import * as utils from '../../utils.js'
+import { El } from '../el.js'
 
 export function Dialog(options = {}, children) {
 	const style = {
