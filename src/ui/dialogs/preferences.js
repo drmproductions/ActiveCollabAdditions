@@ -51,6 +51,14 @@ export function hide() {
 }
 
 export async function show() {
+	const blurOverlaysEl = El('input', {
+		checked: await preferences.getBlurOverlays(),
+		type: 'checkbox',
+		async onChange() {
+			await preferences.setBlurOverlays(this.checked)
+		},
+	})
+
 	const timersDefaultJobTypeEl = El('select', {
 		style: {
 			paddingTop: '6px !important',
@@ -183,6 +191,9 @@ export async function show() {
 							TimerPreview('Running', Timer({ inert: { title: 'This is how the timer will appear when running.', className: 'running' }, menuButton: false })),
 						]),
 					]),
+				]),
+				Row([
+					Column('Blur Overlays', blurOverlaysEl),
 				]),
 			]),
 		]),

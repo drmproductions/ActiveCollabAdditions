@@ -1,3 +1,4 @@
+import * as preferences from '../preferences.js'
 import * as utils from '../utils.js'
 import { El } from './el.js'
 
@@ -18,7 +19,6 @@ function Overlay(id, options = {}, children) {
 		case 'popup':
 			break
 		default:
-			style.backdropFilter = 'blur(2px)'
 			style.background = 'var(--modal-background)'
 			style.opacity = 0
 			style.transition = 'opacity 200ms'
@@ -32,8 +32,11 @@ function Overlay(id, options = {}, children) {
 			options?.onDismiss?.()
 			hide(id)
 		},
-		onConnected() {
+		async onConnected() {
 			setTimeout(() => this.style.opacity = 1, 10)
+			if (await preferences.getBlurOverlays()) {
+				this.style.backdropFilter = 'blur(2px)'
+			}
 		},
 		onContextMenu(e) {
 			if (e.target !== this) return

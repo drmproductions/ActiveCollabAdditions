@@ -22,6 +22,10 @@ export function getAngieStopwatchSettingsEnabled() {
 	return angie.initial_data.settings.rounding_enabled
 }
 
+export async function getBlurOverlays() {
+	return await get('blurOverlays') ?? true
+}
+
 export async function getTimersColorScheme() {
 	return await get('timersColorScheme') ?? 'default'
 }
@@ -48,6 +52,10 @@ export async function hasTimersMinimumEntry() {
 
 export async function hasTimersRoundingInterval() {
 	return await has('timersRoundingInterval')
+}
+
+export async function setBlurOverlays(value) {
+	return await set('blurOverlays', value)
 }
 
 export async function setTimersColorScheme(value) {
