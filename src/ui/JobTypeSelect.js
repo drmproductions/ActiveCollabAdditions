@@ -3,7 +3,7 @@ import * as api from '../api.js'
 import * as cache from '../cache.js'
 import { El } from './el.js'
 
-let lastValue = 0
+let lastValue
 
 export function JobTypeSelect({ id, projectId, taskId, realtime, style }) {
 	const el = El(`div.${id}`, {
