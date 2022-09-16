@@ -142,8 +142,8 @@ export async function show({ projectId, taskId, dialogOptions }) {
 	}))
 
 	const bodyEl = DialogBody({}, El('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } }, [
-		El('div', { style: { display: 'flex', gap: 36 } }, [
-			El('div', [
+		El('div', { style: { display: 'flex', gap: utils.isMobile() ? 18 : 36 } }, [
+			El('div', { style: { flexShrink: 0 } }, [
 				El('h2', 'Time'),
 				timeInputEl,
 			]),

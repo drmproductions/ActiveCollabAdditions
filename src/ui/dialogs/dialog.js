@@ -1,4 +1,5 @@
 import { El } from '../el.js'
+import * as utils from '../../utils.js'
 
 export function Dialog(options = {}, children) {
 	const style = {
@@ -8,34 +9,37 @@ export function Dialog(options = {}, children) {
 		color: 'var(--color-theme-900)',
 		overflow: 'hidden',
 		position: 'relative',
+		maxWidth: 'calc(100vw - 32px)',
 	}
 
-	if (options.width) {
-		style.width = options.width
-	}
-
-	if (!options.centered && options.target) {
-		style.width = style.width ?? 600
-		const { x, y, width, height } = options.target.getBoundingClientRect()
-		style.$ = {
-			position: 'fixed',
+	if (!utils.isMobile()) {
+		if (options.width) {
+			style.width = options.width
 		}
-		if (x > window.innerWidth / 2) {
-			const scrollBarWidth = window.innerWidth - document.body.offsetWidth
-			const windowWidth = window.innerWidth - scrollBarWidth
-			style.$.right = windowWidth - x - width
-			if (style.$.right + style.width > windowWidth) {
-				style.$.right = window.innerWidth / 2 - style.width / 2
+
+		if (!options.centered && options.target) {
+			style.width = style.width ?? 600
+			const { x, y, width, height } = options.target.getBoundingClientRect()
+			style.$ = {
+				position: 'fixed',
 			}
-		}
-		else {
-			style.$.left = x
-		}
-		if (y > window.innerHeight / 2) {
-			style.$.bottom = window.innerHeight - y + 8
-		}
-		else {
-			style.$.top = y + height + 8
+			if (x > window.innerWidth / 2) {
+				const scrollBarWidth = window.innerWidth - document.body.offsetWidth
+				const windowWidth = window.innerWidth - scrollBarWidth
+				style.$.right = windowWidth - x - width
+				if (style.$.right + style.width > windowWidth) {
+					style.$.right = window.innerWidth / 2 - style.width / 2
+				}
+			}
+			else {
+				style.$.left = x
+			}
+			if (y > window.innerHeight / 2) {
+				style.$.bottom = window.innerHeight - y + 8
+			}
+			else {
+				style.$.top = y + height + 8
+			}
 		}
 	}
 
@@ -53,8 +57,16 @@ export function DialogBody(options = {}, children) {
 	}, children)
 }
 
+// TODO on mobile, move the buttons to a footer
 export function DialogHeader(title, buttons) {
-	return El('div', { style: { display: 'flex' } }, [
+	const isMobile = utils.isMobile()
+
+	const style = {
+		display: 'flex',
+		flexDirection: isMobile ? 'column' : 'row',
+	}
+
+	return El('div', { style }, [
 		El('div', {
 			style: {
 				alignItems: 'center',
@@ -64,9 +76,15 @@ export function DialogHeader(title, buttons) {
 				gap: 20,
 				marginRight: 'auto',
 				padding: 20,
+				paddingBottom: isMobile ? 0 : 20,
 			},
 		}, title),
-		...buttons,
+		El('div', {
+			style: {
+				display: 'flex',
+				justifyContent: isMobile ? 'space-around': '',
+			},
+		}, buttons),
 	])
 }
 

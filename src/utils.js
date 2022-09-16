@@ -49,6 +49,10 @@ export function hash(value) {
 	return chunks.join('')
 }
 
+export function isMobile() {
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
 export function setInterval(func, timeout, ...args) {
 	const id = window.setInterval(func, timeout, ...args)
 	return () => window.clearInterval(id)
