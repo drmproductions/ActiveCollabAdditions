@@ -40,14 +40,6 @@ export function TimerMenuButton(options) {
 	async function onClick() {
 		const { projectId, taskId } = Timer.getProjectAndTaskId(options.timerEl ?? this.parentNode)
 
-		const timer = await db.getTimer(projectId, taskId)
-		if (timer && timer.running) {
-			timer.duration += Date.now() - timer.started_at
-			timer.started_at = Date.now()
-			timer.running = false
-			await db.updateTimer(timer)
-		}
-
 		TimerDialog.show({
 			projectId,
 			taskId,

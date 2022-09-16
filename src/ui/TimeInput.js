@@ -113,7 +113,7 @@ function Button({ onClick }, children) {
 	}, children)
 }
 
-function Input({ timeInputHistoryStack, onChange }) {
+function Input({ timeInputHistoryStack, onChange, onFocus }) {
 	async function onKeyDown(e) {
 		let { start, end, value } = timeInputHistoryStack.get()
 
@@ -204,6 +204,7 @@ function Input({ timeInputHistoryStack, onChange }) {
 			width: 'fit-content',
 		},
 		onChange,
+		onFocus,
 		onKeyDown,
 	}, shared.formatDuration(0))
 
@@ -212,7 +213,7 @@ function Input({ timeInputHistoryStack, onChange }) {
 	return el
 }
 
-export function TimeInput({ timeInputHistoryStack, onChange }) {
+export function TimeInput({ timeInputHistoryStack, onChange, onFocus }) {
 	return El('div', {
 		style: {
 			border: '1px solid var(--border-primary)',
@@ -233,7 +234,7 @@ export function TimeInput({ timeInputHistoryStack, onChange }) {
 			},
 		},
 	}, [
-		Input({ timeInputHistoryStack, onChange }),
+		Input({ timeInputHistoryStack, onChange, onFocus }),
 		El('div', {
 			style: {
 				display: 'flex',

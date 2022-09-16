@@ -5,6 +5,7 @@ import * as cache from '../../cache.js'
 import * as db from '../../db.js'
 import * as overlay from '../overlay.js'
 import * as shared from '../../shared.js'
+import * as utils from '../../utils.js'
 import { Dialog, DialogBody, DialogHeader, DialogHeaderButton } from './dialog.js'
 import { El } from '../el.js'
 import { TimeInput, TimeInputHistoryStack } from '../TimeInput.js'
@@ -70,6 +71,15 @@ export async function show({ projectId, taskId, dialogOptions }) {
 				const timer = await db.getTimer(projectId, taskId)
 				const value = shared.formatDuration(timer ? shared.getTimerDuration(timer) : 0)
 				timeInputHistoryStack.set({ ...state, value })
+			}
+		},
+		async onFocus() {
+			const timer = await db.getTimer(projectId, taskId)
+			if (timer && timer.running) {
+				timer.duration += Date.now() - timer.started_at
+				timer.started_at = Date.now()
+				timer.running = false
+				await db.updateTimer(timer)
 			}
 		},
 	})
