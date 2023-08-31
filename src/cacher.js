@@ -98,7 +98,7 @@ async function preloadProjects() {
 	})
 }
 
-async function preloadProjectTasks({ projectId }) {
+export async function preloadProjectTasks({ projectId }) {
 	await cache.useCache(`project-tasks-${projectId}`, async () => {
 		log.i('cacher', `preloading project ${projectId} tasks`)
 		await api.getTasks({ projectId })
