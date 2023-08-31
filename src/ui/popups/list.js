@@ -252,5 +252,5 @@ export function show({
 		variation: 'outline',
 	}, bodyEl)
 
-	overlay.show('list', { variation: 'popup' }, popupEl)
+	overlay.show('list', { blur: false, variation: 'popup' }, popupEl)
 }
