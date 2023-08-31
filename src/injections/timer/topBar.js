@@ -5,6 +5,7 @@ import * as db from '../../db.js'
 import * as shared from '../../shared.js'
 import { El } from '../../ui/el.js'
 import { Timer } from '../../ui/Timer.js'
+import { UsersPage } from '../../ui/UsersPage.js'
 
 export default function() {
 	const containerEl = document.querySelector('.topbar_items')
@@ -18,6 +19,8 @@ export default function() {
 			top: 9,
 		},
 	})
+
+	const usersPage = new UsersPage()
 
 	async function update() {
 		let timers = await db.getTimers()
@@ -53,6 +56,23 @@ export default function() {
 		El('button.btn', [
 			El('span.icon', {
 				innerHTML: angie.icons.svg_icons_time_tracker_icon,
+				style: {
+					alignItems: 'center',
+					display: 'flex !important',
+					justifyContent: 'center',
+				},
+			}),
+		]),
+	]))
+
+	containerEl.prepend(El('li.topbar_item.acit-top-bar-timers-button.sorter', {
+		onClick() {
+			usersPage.sort();
+		},
+	}, [
+		El('button.btn', [
+			El('span.icon', {
+				innerHTML: angie.icons.svg_icons_reorder_alt,
 				style: {
 					alignItems: 'center',
 					display: 'flex !important',
