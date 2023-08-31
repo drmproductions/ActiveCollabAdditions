@@ -28,13 +28,12 @@ for (const filename of iconFilenames) {
 const manifest = {
 	author: 'DRM Productions',
 	homepage_url: 'https://drminc.com',
-	name: 'ActiveCollabAdditions',
+	name: 'ActiveCollab Additions',
 	version,
 
 	description: [
-		'Provides instant access to timers on any ActiveCollab page that lists tasks.',
-		'Refactored to use modern web technologies.',
-		'Along with some other additions.',
+		'Provides handy shortcuts, including instant access to timers on any ActiveCollab page that lists tasks.',
+		'Completely refactored.',
 	].join(' '),
 
 	icons: iconFilenames.reduce((obj, filename) => {
