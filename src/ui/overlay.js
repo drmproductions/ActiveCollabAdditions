@@ -34,8 +34,10 @@ function Overlay(id, options = {}, children) {
 		},
 		async onConnected() {
 			setTimeout(() => this.style.opacity = 1, 10)
-			if (await preferences.getBlurOverlays()) {
-				this.style.backdropFilter = 'blur(2px)'
+			if (options.blur !== false) {
+				if (await preferences.getBlurOverlays()) {
+					this.style.backdropFilter = 'blur(2px)'
+				}
 			}
 		},
 		onContextMenu(e) {

@@ -46,6 +46,10 @@ export async function getTimersStyle() {
 	return await get('timersStyle') ?? 'default'
 }
 
+export async function getUserPageGroupTasksBy() {
+	return await get('userPageGroupTasksBy') ?? 'project'
+}
+
 export async function hasTimersMinimumEntry() {
 	return await has('timersMinimumEntry')
 }
@@ -76,4 +80,8 @@ export async function setTimersRoundingInterval(value) {
 
 export async function setTimersStyle(value) {
 	return await set('timersStyle', value)
+}
+
+export async function setUserPageGroupTasksBy(value) {
+	return await set('userPageGroupTasksBy', value)
 }

@@ -18,6 +18,8 @@ import injectTimerIntoTaskModal from './injections/timer/taskModal.js'
 import injectTimerIntoTaskViewTasks from './injections/timer/taskViewTasks.js'
 import injectTimerIntoTopBar from './injections/timer/topBar.js'
 
+import injectUserPageGroupTasksBySelector from './injections/userPageGroupTasksBySelector.js'
+
 api.intercept(/(projects\/)([0-9]*)(\/)(tasks)$/, async ({ method, options }) => {
 	if (method !== 'post') return
 	if (typeof options.body !== 'string') return
@@ -135,6 +137,10 @@ export function init() {
 
 			if (target.querySelector('.task_view_mode')) {
 				funcSet.add(injectTimerIntoTaskViewTasks)
+			}
+
+			if (target.querySelector('.profile_page_tasks')) {
+				funcSet.add(injectUserPageGroupTasksBySelector)
 			}
 		}
 		for (const func of funcSet.values()) {

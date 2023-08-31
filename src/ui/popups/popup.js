@@ -44,6 +44,10 @@ export function Popup(options = {}, children) {
 			case 'start':
 				style.$.left = x
 				break
+			case 'start-end':
+				style.$.left = x + width
+				style.$.transform = 'translateX(-100%)'
+				break
 			default:
 				style.$.transform = 'translateX(-50%)'
 				style.$.left = x + (width / 2)
