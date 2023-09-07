@@ -1,5 +1,6 @@
 import * as cache from '../../cache.js'
 import * as shared from '../../shared.js'
+import { El } from '../../ui/el.js'
 import { Timer } from '../../ui/Timer.js'
 
 export default async function() {
@@ -10,6 +11,9 @@ export default async function() {
 
 	const optionsEl = headerEl.parentNode.querySelector('div.task-modal-options')
 	if (!optionsEl) return
+
+	// needed as the .task-modal-header element can sometimes overlap this element (even without our additions)
+	El.setStyle(optionsEl, { $: { position: 'relative', zIndex: '1' } })
 
 	if (optionsEl.querySelector('.acit-timer')) return
 
