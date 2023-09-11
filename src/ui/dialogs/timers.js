@@ -173,6 +173,7 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 
 	const labelStyle = {
 		alignItems: 'center',
+		cursor: 'pointer',
 		display: 'flex',
 	}
 
@@ -209,13 +210,17 @@ function Task({ isFavorite, isTimerSubmittable, name, projectId, submittingState
 		}
 	}
 
+	async function onClickName() {
+		window.open(`${document.location.origin}/projects/${projectId}/tasks/${taskId}`)
+	}
+
 	async function onClickSubmit() {
 		await shared.submitTimer({ projectId, taskId })
 	}
 
 	const children = []
 	children.push(El('div', { style: timerStyle }, [timerEl]))
-	children.push(El('div', { style: { ...labelStyle, marginRight: 'auto' } }, name))
+	children.push(El('div', { style: { ...labelStyle, marginRight: 'auto' }, onClick: onClickName }, name))
 
 	if (submittingState) {
 		if (submittingState === 'submitting') {
