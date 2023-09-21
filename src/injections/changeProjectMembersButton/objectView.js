@@ -5,7 +5,7 @@ export default function() {
 	const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
 	if (!propertyEl) return
 
-	const id = 'acit-change-project-members-button-modal'
+	const id = 'aca-change-project-members-button-modal'
 	if (propertyEl.querySelector(`.${id}`)) return
 
 	const ids = shared.getProjectIdAndMaybeTaskIdFromUrl(document.location)

@@ -10,12 +10,12 @@ export default function() {
   const parentEl = tasksEl.parentElement
   if (!parentEl) return
 
-  if (parentEl.querySelector('.acit-group-users-by')) return
+  if (parentEl.querySelector('.aca-group-users-by')) return
 
   El.setStyle(parentEl, { $: { position: 'relative' } })
 
   parentEl.prepend(GroupTasksBySelect({
-    id: 'acit-group-users-by',
+    id: 'aca-group-users-by',
     style: {
       position: 'absolute',
       right: '16px',

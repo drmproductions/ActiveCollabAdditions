@@ -6,7 +6,7 @@ export default function() {
 	if (!ids) return
 	const { projectId, taskId } = ids
 
-	const id = 'acit-assignee-select-inline'
+	const id = 'aca-assignee-select-inline'
 	for (const taskFormEl of document.body.querySelectorAll('div.task_form')) {
 		if (taskFormEl.querySelector(`.${id}`)) continue
 		const labelEls = Array.from(taskFormEl.querySelectorAll('label'))

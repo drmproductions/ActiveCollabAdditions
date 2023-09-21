@@ -149,12 +149,12 @@ export function GroupTasksBySelect({ id, style: extraStyle }) {
 
         const taskListName = taskListNameEl.innerText
 
-        for (const taskEl of tasksInnerEl.querySelectorAll(`.task[acit-project-id='${projectId}'][acit-task-list-name='${taskListName}']`)) {
+        for (const taskEl of tasksInnerEl.querySelectorAll(`.task[aca-project-id='${projectId}'][aca-task-list-name='${taskListName}']`)) {
           const completeToggleEl = taskEl.querySelector('.complete_toggler')
           if (completeToggleEl) El.setStyle(completeToggleEl, { $: { display: '' } })
           const actionsEl = taskEl.querySelector('.task_actions_container')
           if (actionsEl) El.setStyle(actionsEl, { $: { display: '' } })
-          let projectNameEl = taskEl.querySelector('.acit_project_name')
+          let projectNameEl = taskEl.querySelector('.aca_project_name')
           if (projectNameEl) projectNameEl.remove()
           taskListTasksEl.appendChild(taskEl)
         }
@@ -177,14 +177,14 @@ export function GroupTasksBySelect({ id, style: extraStyle }) {
             const actionsEl = taskEl.querySelector('.task_actions_container')
             if (actionsEl) El.setStyle(actionsEl, { $: { display: 'none' } })
 
-            taskEl.setAttribute('acit-project-id', projectId)
-            taskEl.setAttribute('acit-task-list-name', taskListName)
+            taskEl.setAttribute('aca-project-id', projectId)
+            taskEl.setAttribute('aca-task-list-name', taskListName)
 
-            let projectNameEl = taskEl.querySelector('.acit_project_name')
+            let projectNameEl = taskEl.querySelector('.aca_project_name')
             if (!projectNameEl) {
               const taskNameEl = taskEl.querySelector('.task_name')
               if (taskNameEl) {
-                projectNameEl = El('span.acit_project_name.tasks_project_name_wrapper.tw-inline-block.tw-truncate')
+                projectNameEl = El('span.aca_project_name.tasks_project_name_wrapper.tw-inline-block.tw-truncate')
                 taskNameEl.parentElement.insertBefore(projectNameEl, taskNameEl)
                 taskNameEl.parentElement.insertBefore(taskNameEl, projectNameEl)
               }

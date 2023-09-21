@@ -153,9 +153,9 @@ export function init() {
 		mutationObserver.disconnect()
 		unsub?.()
 
-		document.body.querySelectorAll('.acit-top-bar-timer-wrapper')?.remove()
-		document.body.querySelectorAll('.acit-top-bar-timers-button')?.remove()
-		for (const el of document.body.querySelectorAll('.acit-timer')) {
+		document.body.querySelectorAll('.aca-top-bar-timer-wrapper')?.remove()
+		document.body.querySelectorAll('.aca-top-bar-timers-button')?.remove()
+		for (const el of document.body.querySelectorAll('.aca-timer')) {
 			el.remove()
 		}
 	}

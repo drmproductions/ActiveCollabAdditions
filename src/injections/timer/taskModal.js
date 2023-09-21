@@ -15,7 +15,7 @@ export default async function() {
 	// needed as the .task-modal-header element can sometimes overlap this element (even without our additions)
 	El.setStyle(optionsEl, { $: { position: 'relative', zIndex: '1' } })
 
-	if (optionsEl.querySelector('.acit-timer')) return
+	if (optionsEl.querySelector('.aca-timer')) return
 
 	if (!(el = headerEl.querySelector('.task_name'))) return
 	const taskName = el.innerText

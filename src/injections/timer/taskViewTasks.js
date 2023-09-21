@@ -4,7 +4,7 @@ import { useStyle } from '../../ui/style.js'
 
 const showTimerWhenHoveringOverTaskClassName = useStyle({
 	':hover': {
-		' .acit-timer-menu-button': {
+		' .aca-timer-menu-button': {
 			opacity: 1,
 		},
 	},
@@ -16,7 +16,7 @@ export default function() {
 		if (!taskNameEl) continue
 
 		taskEl.classList.add(showTimerWhenHoveringOverTaskClassName)
-		if (taskEl.querySelector('.acit-timer')) continue
+		if (taskEl.querySelector('.aca-timer')) continue
 
 		const { href } = taskNameEl
 		if (!href) continue

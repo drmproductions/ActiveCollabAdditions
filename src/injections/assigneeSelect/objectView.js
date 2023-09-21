@@ -5,7 +5,7 @@ export default function() {
 	const propertyEl = document.body.querySelector('div.object_view_property.assignee_property')
 	if (!propertyEl) return
 
-	const id = 'acit-assignee-select-modal'
+	const id = 'aca-assignee-select-modal'
 	if (propertyEl.querySelector(`.${id}`)) return
 
 	const oldEl = propertyEl.querySelector('button')

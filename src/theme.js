@@ -184,7 +184,7 @@ export function init() {
 
 async function update() {
 	const className = useStyle({
-		' .acit-timer-inner': await getStyles(),
+		' .aca-timer-inner': await getStyles(),
 	})
 	document.body.classList.add(className)
 	if (prevClassName) {

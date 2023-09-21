@@ -24,7 +24,7 @@ function Overlay(id, options = {}, children) {
 			style.transition = 'opacity 200ms'
 	}
 
-	return El(`div.acit-overlay.acit-overlay-${id}`, {
+	return El(`div.aca-overlay.aca-overlay-${id}`, {
 		dataset: { id },
 		style,
 		onClick(e) {
@@ -60,14 +60,14 @@ function closeOnEscape(e) {
 		return
 	}
 
-	const topOverlay = Array.from(document.querySelectorAll(`.acit-overlay`)).pop()
+	const topOverlay = Array.from(document.querySelectorAll(`.aca-overlay`)).pop()
 	if (topOverlay) {
 		hide(topOverlay.dataset.id)
 	}
 }
 
 export function get(id) {
-	return document.querySelector(`.acit-overlay-${id}`)
+	return document.querySelector(`.aca-overlay-${id}`)
 }
 
 export function hide(id) {
@@ -84,11 +84,11 @@ export function hide(id) {
 }
 
 export function isOpen(id) {
-	return Boolean(document.querySelector(`.acit-overlay-${id}`))
+	return Boolean(document.querySelector(`.aca-overlay-${id}`))
 }
 
 function openCount() {
-	return document.querySelectorAll(`.acit-overlay`).length
+	return document.querySelectorAll(`.aca-overlay`).length
 }
 
 function preventScrolling(e) {

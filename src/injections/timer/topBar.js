@@ -45,7 +45,7 @@ export default function() {
 
 	update()
 
-	containerEl.prepend(El('li.topbar_item.acit-top-bar-timers-button', {
+	containerEl.prepend(El('li.topbar_item.aca-top-bar-timers-button', {
 		onClick() {
 			TimersDialog.show()
 		},
@@ -62,7 +62,7 @@ export default function() {
 		]),
 	]))
 
-	containerEl.prepend(El('li.topbar_item.acit-top-bar-timer-wrapper', {
+	containerEl.prepend(El('li.topbar_item.aca-top-bar-timer-wrapper', {
 		style: {
 			margin: 0,
 			width: 'fit-content !important',

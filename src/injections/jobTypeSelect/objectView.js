@@ -7,7 +7,7 @@ export default function() {
 	if (!ids) return
 	const { projectId, taskId } = ids
 
-	const id = 'acit-job-type-select-modal'
+	const id = 'aca-job-type-select-modal'
 	for (const objectViewEl of document.body.querySelectorAll('div.object_view')) {
 		if (objectViewEl.querySelector(`.${id}`)) continue
 		const labelEls = Array.from(objectViewEl.querySelectorAll('label'))

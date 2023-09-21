@@ -50,7 +50,7 @@ export function TimerMenuButton(options) {
 		})
 	}
 
-	return El('div.acit-timer-menu-button', { style, title: 'View', onClick }, [
+	return El('div.aca-timer-menu-button', { style, title: 'View', onClick }, [
 		El('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'var(--color-theme-600)' }, [
 			El('path', { d: 'M6 10a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z', ['fill-rule']: 'nonzero' }),
 		]),
@@ -64,11 +64,11 @@ Timer.getDisabled = (el) => {
 }
 
 Timer.getInnerEl = (el) => {
-	return el.querySelector('.acit-timer-inner')
+	return el.querySelector('.aca-timer-inner')
 }
 
 Timer.getMenuButtonEl = (el) => {
-	return el.querySelector('.acit-timer-menu-button')
+	return el.querySelector('.aca-timer-menu-button')
 }
 
 Timer.getProjectAndTaskId = (el) => {
@@ -207,12 +207,12 @@ export function Timer({ dataset, inert, menuButton, menuButtonOptions, style }) 
 		unsub?.()
 	}
 
-	innerEl = El('div.acit-timer-inner', {
+	innerEl = El('div.aca-timer-inner', {
 		style: timerInnerClassName,
 		onClick,
 	}, shared.formatDuration(0))
 
-	const el = El('div.acit-timer', {
+	const el = El('div.aca-timer', {
 		dataset,
 		style: {
 			clear: 'right',

@@ -171,8 +171,7 @@ export async function hasPreference(key) {
 
 export async function init() {
 	await new Promise((resolve, reject) => {
-		// TODO rename this before publishing to the store
-		const request = window.indexedDB.open('active-collab-inline-timers', 3)
+		const request = window.indexedDB.open('active-collab-additions', 3)
 		request.onerror = (event) => {
 			reject(event)
 		}
