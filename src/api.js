@@ -1,6 +1,7 @@
 import * as log from './log.js'
 
 const interceptors = []
+const proxyOptions = {}
 
 function getAuthFields() {
 	return {
@@ -46,46 +47,50 @@ export async function getTasks({ projectId }) {
 	return await res.json()
 }
 
+export function deinit() {
+	delete proxyOptions.apply
+}
+
 export function init() {
-	window.fetch = new Proxy(window.fetch, {
-		async apply(target, self, args) {
-			const [resource, options, ...rest] = args
+	proxyOptions.apply = async(target, self, args) => {
+		const [resource, options, ...rest] = args
 
-			const performFuncs = []
+		const performFuncs = []
 
-			if (resource) {
-				try {
-					const url = new URL(resource)
-					const method = (options?.method ?? 'get').toLowerCase()
-					const onPerform = (func) => performFuncs.push(func)
-					for (const { handler, regex } of interceptors) {
-						const matches = url.pathname.match(regex)
-						if (!matches) continue
-						await handler({ url, matches, method, options, onPerform })
-					}
-				}
-				catch (e) {
-					log.e('api', e)
+		if (resource) {
+			try {
+				const url = new URL(resource)
+				const method = (options?.method ?? 'get').toLowerCase()
+				const onPerform = (func) => performFuncs.push(func)
+				for (const { handler, regex } of interceptors) {
+					const matches = url.pathname.match(regex)
+					if (!matches) continue
+					await handler({ url, matches, method, options, onPerform })
 				}
 			}
+			catch (e) {
+				log.e('api', e)
+			}
+		}
 
-			const res = await target.call(self, resource, options, ...rest)
+		const res = await target.call(self, resource, options, ...rest)
 
-			if (performFuncs.length > 0) {
-				const value = await(res.clone()).json()
-				try {
-					for (const resolve of performFuncs) {
-						await resolve(value)
-					}
-				}
-				catch (e) {
-					log.e('api', e)
+		if (performFuncs.length > 0) {
+			const value = await(res.clone()).json()
+			try {
+				for (const resolve of performFuncs) {
+					await resolve(value)
 				}
 			}
+			catch (e) {
+				log.e('api', e)
+			}
+		}
 
-			return res
-		},
-	})
+		return res
+	}
+
+	window.fetch = new Proxy(window.fetch, proxyOptions)
 }
 
 export function intercept(regex, handler) {
