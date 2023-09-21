@@ -16,7 +16,7 @@
     button.style.whiteSpace = 'nowrap'
     button.innerText = 'Enable Persistent Access'
     button.onclick = async () => {
-      const granted = await chrome.permissions.request({ origins: [`${url.origin}/*`] })
+      const granted = await _browser.permissions.request({ origins: [`${url.origin}/*`] })
       if (granted) window.close()
     }
     document.body.appendChild(button)
@@ -32,7 +32,7 @@
   // const button = document.createElement('button')
   // button.innerText = 'Disable on this website'
   // button.onclick = async () => {
-  //   const removed = await chrome.permissions.remove({ origins: [`${url.origin}`] })
+  //   const removed = await _browser.permissions.remove({ origins: [`${url.origin}`] })
   //   console.log(removed)
   // }
   // document.body.appendChild(button)
