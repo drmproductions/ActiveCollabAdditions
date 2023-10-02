@@ -62,7 +62,7 @@ switch (target) {
 			js: ['bundle.min.js'],
 			matches: ['*://*/*'],
 			world: 'MAIN',
-			runAt: 'document_start',
+			run_at: 'document_start',
 		}]
 		manifest.optional_host_permissions = ['*://*/*']
 		manifest.web_accessible_resources = [{
