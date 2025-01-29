@@ -9,8 +9,17 @@ if (!['chromium', 'firefox'].includes(target)) {
 
 const version = JSON.parse(fs.readFileSync('src/meta.json')).version
 const outDir = `${process.cwd()}/out/${target}/current`
-const zipPath = `${process.cwd()}/out/${target}/${version}.zip`
 const iconFilenames = fs.readdirSync(`www/icons`).filter(x => x.endsWith('.png'))
+
+let archivePath = `${process.cwd()}/out/${target}/${version}`
+switch (target) {
+	case 'chromium':
+		archivePath += '.zip'
+		break
+	case 'firefox':
+		archivePath += '.xpi'
+		break
+}
 
 execSync(`rm -rf ${outDir}`)
 try { fs.mkdirSync('out') } catch {}
@@ -28,6 +37,8 @@ for (const filename of iconFilenames) {
 }
 
 const manifest = {
+	manifest_version: 3,
+
 	author: 'DRM Productions',
 	homepage_url: 'https://drminc.com',
 	name: 'ActiveCollab Additions',
@@ -44,7 +55,7 @@ const manifest = {
 		return obj
 	}, {}),
 
-	browser_action: {
+	action: {
 		default_title: 'ActiveCollab Additions',
 		default_popup: 'popup.html',
 		default_icon: {
@@ -52,48 +63,45 @@ const manifest = {
 			'38': 'icons/38.png'
 		},
 	},
+
+	content_scripts: [{
+		id: 'bundle',
+		js: ['bundle.min.js'],
+		matches: ['*://*/*'],
+		world: 'MAIN',
+		run_at: 'document_start',
+	}],
+
+	optional_host_permissions: ['*://*/*'],
+
+	permissions: ['activeTab'],
+
+	web_accessible_resources: [{
+		resources: ['bundle.min.js', 'bundle.min.js.map'],
+		matches: ['*://*/*'],
+	}],
 }
 
-switch (target) {
-	case 'chromium':
-		manifest.manifest_version = 3
-		manifest.content_scripts = [{
-			id: 'bundle',
-			js: ['bundle.min.js'],
-			matches: ['*://*/*'],
-			world: 'MAIN',
-			run_at: 'document_start',
-		}]
-		manifest.optional_host_permissions = ['*://*/*']
-		manifest.web_accessible_resources = [{
-			resources: ['bundle.min.js', 'bundle.min.js.map'],
-			matches: ['*://*/*'],
-		}]
-		manifest.permissions = ['activeTab']
-		manifest.action = manifest.browser_action
-		delete manifest.browser_action
-		break
-	case 'firefox':
-		manifest.manifest_version = 2
-		manifest.permissions = ['*://*/*']
-		manifest.web_accessible_resources = ['bundle.min.js']
-		break
+if (target === 'firefox') {
+	manifest.browser_specific_settings = {
+	  gecko: {
+	    id: "ActiveCollabAdditions@drminc.com",
+	    strict_min_version: "109",
+	  },
+	  gecko_android: {
+	    strict_min_version: "109",
+	  },
+	}
+	delete manifest.content_scripts[0].id
 }
 
 fs.writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest))
 
-execSync(`cd ${outDir} && zip -r ${zipPath} *`)
+execSync(`cd ${outDir} && zip -r ${archivePath} *`)
 
 // add the background.js for live-reload functionality
 fs.copyFileSync('www/background.js', `${outDir}/background.js`)
-switch (target) {
-	case 'chromium':
-		manifest.background = {
-			service_worker: 'background.js',
-		}
-		break
-	case 'firefox':
-		// TODO
-		break
+manifest.background = {
+	service_worker: 'background.js',
 }
 fs.writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest))
