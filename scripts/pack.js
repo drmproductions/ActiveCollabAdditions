@@ -86,10 +86,10 @@ if (target === 'firefox') {
 	manifest.browser_specific_settings = {
 	  gecko: {
 	    id: "ActiveCollabAdditions@drminc.com",
-	    strict_min_version: "109",
+	    strict_min_version: "109.0",
 	  },
 	  gecko_android: {
-	    strict_min_version: "109",
+	    strict_min_version: "109.0",
 	  },
 	}
 	delete manifest.content_scripts[0].id
